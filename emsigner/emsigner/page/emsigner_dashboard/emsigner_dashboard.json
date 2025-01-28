@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2025-01-13 17:12:34.113953",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2025-01-13 17:13:24.851718",
+ "modified_by": "Administrator",
+ "module": "emSigner",
+ "name": "emsigner-dashboard",
+ "owner": "Administrator",
+ "page_name": "emsigner-dashboard",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "EMSigner Dashboard"
+}
