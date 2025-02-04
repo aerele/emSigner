@@ -1,132 +1,190 @@
-# Copyright (c) 2025, Aerele Technologies Private Limited and contributors
-# For license information, please see license.txt
-
-import frappe
-from base64 import b64encode
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
-from Crypto.Util.Padding import pad, unpad
 import os
 import json
+import frappe
+import binascii
+import hashlib
+import uuid
+import base64
+import urllib.parse
+from pathlib import Path
+from base64 import b64encode, b64decode
+from Crypto.Cipher import AES, PKCS1_v1_5
+from Crypto.Util.Padding import pad, unpad
+from Crypto.PublicKey import RSA
 from frappe.model.document import Document
+from frappe.utils.pdf import get_pdf
 
 class EmudhraemSignerGateway(Document):
 	pass
 
-import base64, json
-import binascii
-import hashlib
-import os
-import requests
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES, PKCS1_v1_5
-from Crypto.Util.Padding import pad
+authentication_mode =  {
+		"OTP": 1,
+		"Biometric": 2,
+		"Iris": 3,
+		"Face": 4
+	}
+class AES_ECB_Cipher:
+	def __init__(self, key):
+		self.key = key
 
-def generate_hash(encrypted_data):
-    """Generate SHA256 hash of the encrypted data."""
-    hash_object = hashlib.sha256(encrypted_data.encode('utf-8'))
-    return hash_object.hexdigest()
+	def encrypt(self, raw_data, encode=True):
+		cipher = AES.new(self.key, AES.MODE_ECB)
+		padded_data = pad(raw_data.encode() if isinstance(raw_data, str) else raw_data, AES.block_size)
+		encrypted = cipher.encrypt(padded_data)
+		return b64encode(encrypted) if encode else encrypted
 
-def load_key(file_path):
-    """Load a key from the provided file path."""
-    with open(file_path, "rb") as key_file:
-        return key_file.read()
+	def decrypt(self, encrypted_data, decode=True):
+		cipher = AES.new(self.key, AES.MODE_ECB)
+		decoded_data = b64decode(encrypted_data)
+		decrypted = cipher.decrypt(decoded_data)
+		return unpad(decrypted, AES.block_size).decode() if decode else unpad(decrypted, AES.block_size)
 
-def encrypt_data(data, session_key):
-    """Encrypt data using AES in ECB mode without an IV."""
-    cipher = AES.new(session_key, AES.MODE_ECB)
-    padded_data = pad(data, AES.block_size)
-    return base64.b64encode(cipher.encrypt(padded_data)).decode()
+class RSAEncryption:
+	def __init__(self, pubcertificate_path):
+		with open(pubcertificate_path, "r") as f:
+			pub_key = f.read()
+			self.cipher_rsa = PKCS1_v1_5.new(RSA.importKey(pub_key))
 
-def encrypt_session_key(session_key, public_key):
-    """Encrypt a symmetric key using an RSA public key."""
-    public_key = RSA.import_key(public_key)
-    cipher = PKCS1_v1_5.new(public_key)
-    ciphertext = cipher.encrypt(session_key)
-    return base64.b64encode(ciphertext).decode()
+	def encrypt(self, raw_data):
+		return b64encode(self.cipher_rsa.encrypt(raw_data))
 
-def send_request(step5_output, step2_output, step4_output, url):
-    """Send an HTTP POST request with the encrypted data."""
-    payload = {
-        'Parameter1': step5_output,
-        'Parameter2': step2_output,
-        'Parameter3': step4_output
-    }
-    print(payload)
-    response = requests.post(url, json=payload)
-    return response.text
+@frappe.whitelist()
+def get_emsigner_parameters(**args):
+	settings_doc = frappe.get_doc("Emudhra emSigner Gateway")
+	html = frappe.get_print(
+		doctype = args["doctype_name"],
+		name = args["document_name"],
+		print_format = args.get("print_format"),
+		letterhead = args.get("letter_head")
+	)
+	pdf = get_pdf(html)
+	ref_number = uuid.uuid4().hex
+	data = {
+		"Name": args.get("name"),
+		"FileType": "PDF",
+		"File": base64.b64encode(pdf).decode('utf-8'),
+		"ReferenceNumber": ref_number,
+		"AuthToken": settings_doc.authentication_token,
+		"SignatureType": 0,
+		"SignatureMode": "3",
+		"AuthenticationMode": authentication_mode[settings_doc.authentication_mode],
+		"IsCosign": False,
+		"SelectPage": settings_doc.select_page,
+		"SignaturePosition": settings_doc.signature_position,
+		"PreviewRequired": bool(settings_doc.preview_required),
+		"Enableuploadsignature": bool(settings_doc.enable_upload_signature),
+		"Enablefontsignature": bool(settings_doc.enable_font_signature),
+		"EnableDrawSignature": bool(settings_doc.enable_draw_signature),
+		"EnableeSignaturePad": bool(settings_doc.enable_esignature_pad),
+		"Storetodb": bool(settings_doc.store_to_db),
+		"EnableViewDocumentLink": bool(settings_doc.enable_view_document_link),
+		"SUrl": f"{frappe.utils.get_url()}/api/method/emsigner.emsigner.doctype.emudhra_emsigner_gateway.emudhra_emsigner_gateway.decrypt_method",
+		"FUrl": "https://test.com/emudhra/failure",
+		"CUrl": "https://test.com/emudhra/cancel",
+		"IsCompressed": bool(settings_doc.is_compressed),
+		"IsGSTN": bool(settings_doc.is_gstin),
+		"IsGSTN3B": bool(settings_doc.is_gstn3b)
+	}
 
-def test_em():
-    # Example input data
-    data = json.dumps({
-        "Name": "test",
-        "FileType": "PDF",
-        "SelectPage": "ALL",
-        "SignaturePosition": "Bottom-Right",
-        "AuthToken": "84387b11-b039-4759-9986-22f2524719d8",
-        "File": "JVBERi0xLjMKMyAwIG9iago8PC9UeXBlIC9QYWdlCi9QYXJlbnQgMSAwIFIKL1Jlc291cmNlcyAyIDAgUgovQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9GaWx0ZXIgL0ZsYXRlRGVjb2RlIC9MZW5ndGggMzQ4Pj4Kc3RyZWFtCnicbZHNTsMwEITvPMUcQSpu/oO5ASVCnCo1F45us2kDSRzZjkp5euzUoqAgWYoVzcy3no3wehWwNMfx6rHEsggRZiwIUNZ4Lt2vKOAsi5DzxKnKCtcb0Q0tYb0qsJK7saPe3KB89/plESGM/kTEIQs58piz4JxQHhoNewT0JWtPPSlhqMKom36P9ckcZA/RVzAHQuE0bbNVQp0YfgF9ehiwPJ7S3+SInehtDFmnxXgXjMROkUVMvMrPrnFszAGGPs0CTSf2pBcwYtu6r6N3UhGbAbM0YcEZWNjMUZGGrM/Ay6vu574oZRmffLd4GrWRXfPlaKilG8YRtTlZ+sya8pzFibduxmGQyliXQje2pnHEwU0/92V82sfkexhtDU6Hre3i4x91ErAs9eoXEhWpaahaSmOvcjCN7Oe25C5mPPN9UItaEU2N+yf6XRiy1bgVCI2eqKLqp9pvvYa8wwplbmRzdHJlYW0KZW5kb2JqCjEgMCBvYmoKPDwvVHlwZSAvUGFnZXMKL0tpZHMgWzMgMCBSIF0KL0NvdW50IDEKL01lZGlhQm94IFswIDAgNTk1LjI4IDg0MS44OV0KPj4KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZSAvRm9udAovQmFzZUZvbnQgL0hlbHZldGljYS1Cb2xkCi9TdWJ0eXBlIC9UeXBlMQovRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZwo+PgplbmRvYmoKNiAwIG9iago8PC9UeXBlIC9Gb250Ci9CYXNlRm9udCAvSGVsdmV0aWNhCi9TdWJ0eXBlIC9UeXBlMQovRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZwo+PgplbmRvYmoKMiAwIG9iago8PAovUHJvY1NldCBbL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSV0KL0ZvbnQgPDwKL0YxIDUgMCBSCi9GMiA2IDAgUgo+PgovWE9iamVjdCA8PAo+Pgo+PgplbmRvYmoKNyAwIG9iago8PAovUHJvZHVjZXIgKFB5RlBERiAxLjcuMiBodHRwOi8vcHlmcGRmLmdvb2dsZWNvZGUuY29tLykKL0NyZWF0aW9uRGF0ZSAoRDoyMDI1MDEyODA2NTM0MCkKPj4KZW5kb2JqCjggMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDEgMCBSCi9PcGVuQWN0aW9uIFszIDAgUiAvRml0SCBudWxsXQovUGFnZUxheW91dCAvT25lQ29sdW1uCj4+CmVuZG9iagp4cmVmCjAgOQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDA1MDUgMDAwMDAgbiAKMDAwMDAwMDc4OSAwMDAwMCBuIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwODcgMDAwMDAgbiAKMDAwMDAwMDU5MiAwMDAwMCBuIAowMDAwMDAwNjkzIDAwMDAwIG4gCjAwMDAwMDA5MDMgMDAwMDAgbiAKMDAwMDAwMTAxMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDkKL1Jvb3QgOCAwIFIKL0luZm8gNyAwIFIKPj4Kc3RhcnR4cmVmCjExMTUKJSVFT0YK",
-        "PageNumber": "1",
-        "PreviewRequired": True,
-        "PagelevelCoordinates": "",
-        "CustomizeCoordinates": "",
-        "SUrl": "www.google.com",
-        "FUrl": "www.youtube.com",
-        "CUrl": "www.w3schools.com",
-        "ReferenceNumber": "",
-        "Enableuploadsignature": True,
-        "Enablefontsignature": True,
-        "EnableDrawSignature": True,
-        "EnableeSignaturePad": False,
-        "IsCompressed": False,
-        "IsCosign": False,
-        "Storetodb": False,
-        "IsGSTN": False,
-        "IsGSTN3B": False,
-        "IsCustomized": False,
-        "eSign_SignerId": "",
-        "TransactionNumber": "",
-        "SignatureMode": 1,
-        "AuthenticationMode": 1,
-        "EnableInitials": False,
-        "IsInitialsCustomized": False,
-        "SelectInitialsPage": None,
-        "InitialsPosition": None,
-        "InitialsCustomizeCoordinates": "",
-        "InitialsPagelevelCordinates": "",
-        "InitialsPageNumbers": "",
-        "ValidateAllPlaceholders": False,
-        "Anchor": "Middle",
-        "InitialSearchtext": None,
-        "InitialsAnchor": None,
-        "Reason": "test",
-        "EnableFetchSignerInfo": None
-    })
-    
-    # Generate symmetric key
-    session_key = os.urandom(16)
-    session_key = binascii.hexlify(session_key).decode('utf-8').encode('utf-8')
-    print(session_key, "session_key")
-    
-    # Encrypt data using AES in ECB mode
-    encrypted_payload = encrypt_data(data.encode("utf-8"), session_key)
-    print(encrypted_payload, "encrypted_payload")
-    
-    # Generate hash of encrypted data
-    data_hash = generate_hash(encrypted_payload)
-    encrypted_hash_result = encrypt_data(data_hash.encode("utf-8"), session_key)
-    print(encrypted_hash_result, "encrypted_hash_result")
-    
-    # Load public key and encrypt symmetric key
-    public_key = load_key("/home/vimalnarmu/Documents/public_key.txt")
-    encrypted_key = encrypt_session_key(session_key, public_key)
-    
-    # Send the request
-    url = "https://demosignergateway.emsigner.com/eMsecure/V3_0/Index"
-    response = send_request(
-        encrypted_key,
-        encrypted_payload,
-        encrypted_hash_result,
-        url
-    )
+	json_data = json.dumps(data)
+	session_key = os.urandom(16)
+	session_key = binascii.hexlify(session_key).decode('utf-8').encode('utf-8')
 
-    print("Response from server:", response)
+	aes_cipher = AES_ECB_Cipher(key=session_key)
+	encrypted_data = aes_cipher.encrypt(json_data).decode("utf-8")
+
+	pubcertificate_path = f"{frappe.get_doc('File', {'file_url': settings_doc.public_certificate}).get_full_path()}"
+	rsa_encryption = RSAEncryption(pubcertificate_path)
+	encrypted_session_key = rsa_encryption.encrypt(session_key).decode("utf-8")
+
+	hash_data = hashlib.sha256(json_data.encode("utf-8")).digest()
+	encrypted_binary = aes_cipher.encrypt(hash_data, encode=False)
+	encrypted_hash = base64.b64encode(encrypted_binary).decode("utf-8")
+
+	html_wrapper = f'''
+	<html>
+		<head>
+			<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+			<script>
+				$(document).ready(function() {{ $('#signDocForm').submit(); }});
+			</script>
+		</head>
+		<body>
+			<table align="center">
+				<tbody>
+					<tr><td><strong>You are being redirected to emSigner portal</strong></td></tr>
+					<tr><td><font color="blue">Please wait ...</font></td></tr>
+					<tr><td>(Please do not press 'Refresh' or 'Back' button)</td></tr>
+				</tbody>
+			</table>
+			<form id="signDocForm" name="signDocForm" method="post" action="https://demosignergateway.emsigner.com/eMsecure/V3_0/Index">
+				<input type="hidden" name="Parameter1" id="Parameter1" value="{encrypted_session_key}">
+				<input type="hidden" name="Parameter2" id="Parameter2" value="{encrypted_data}">
+				<input type="hidden" name="Parameter3" id="Parameter3" value="{encrypted_hash}">
+			</form>
+		</body>
+	</html>'''
+
+	emsigner_log = frappe.new_doc("Emudhra emSigner log")
+	emsigner_log.update({
+		"doctype_name": args["doctype_name"],
+		"document_name": args["document_name"],
+		"session_key": session_key.decode('utf-8'),
+		"encrypted_session_key": encrypted_session_key, 
+		"reference_id": ref_number,
+		"encrypted_data": encrypted_data, 
+		"payload_json": encrypted_hash
+	})
+	emsigner_log.insert()
+
+	return html_wrapper
+
+@frappe.whitelist(allow_guest=True)
+def decrypt_method():
+	request_payload = frappe.request.data.decode('utf-8')
+	if not isinstance(request_payload, str):
+		raise ValueError("Expected a string for request payload")
+	
+	parsed_data = urllib.parse.parse_qs(request_payload)
+	json_data = {key: value[0] for key, value in parsed_data.items()}
+
+	reference_no = json_data.get('Referencenumber')
+	return_value = json_data.get('Returnvalue')
+	if not reference_no or not return_value:
+		raise ValueError("Missing required fields: Referencenumber or Returnvalue")
+
+	session_key = frappe.db.get_value("Emudhra emSigner log", {"reference_id": reference_no}, "session_key")
+	if not session_key:
+		raise ValueError(f"No session key found for reference number: {reference_no}")
+
+	session_key = session_key.encode('utf-8')
+	aes_encrypt = AES_ECB_Cipher(key=session_key)
+
+	data = urllib.parse.unquote(return_value)
+	if len(data) % 4 != 0:
+		data += '=' * (4 - len(data) % 4)
+
+	decrypt_data = aes_encrypt.decrypt(data, decode=False)
+
+	if decrypt_data[:4] != b'%PDF':
+		raise ValueError('Decrypted data does not contain a valid PDF signature')
+
+	create_attachment(reference_no, decrypt_data)
+
+	frappe.local.response["type"] = "redirect"
+	frappe.local.response["location"] = "/emSignerParameters"
+
+def create_attachment(reference_no, content):
+	log = frappe.db.get_value("Emudhra emSigner log", {"reference_id": reference_no}, ["doctype_name", "document_name"], as_dict=True)
+	doc = frappe.new_doc("File")
+	doc.update(
+		{
+			"content": content,
+			"attached_to_doctype": log["doctype_name"], 
+			"attached_to_name": log["document_name"], 
+			"file_type": "PDF", 
+			"is_private": 0,
+			"file_name": reference_no+"_signed_file.pdf",
+			"folder": "Home/Attachments"
+		})
+	doc.insert(ignore_permissions=True)

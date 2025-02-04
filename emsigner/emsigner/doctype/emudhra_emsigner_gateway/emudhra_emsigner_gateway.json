@@ -5,13 +5,10 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "reference_type",
-  "reference_name",
   "document_type",
-  "document",
-  "signatory_name",
   "authentication_token",
-  "preview_required",
+  "emudhra_emsign_doctypes",
+  "public_certificate",
   "column_break_xwjs",
   "signature_mode",
   "select_page",
@@ -21,41 +18,27 @@
   "custom_co_ordinates",
   "reason",
   "section_break_tumo",
-  "authentication_mode"
+  "authentication_mode",
+  "section_break_pcpb",
+  "enable_upload_signature",
+  "enable_font_signature",
+  "enable_draw_signature",
+  "enable_esignature_pad",
+  "enable_view_document_link",
+  "column_break_zdaa",
+  "store_to_db",
+  "is_compressed",
+  "is_gstin",
+  "is_gstn3b",
+  "preview_required"
  ],
  "fields": [
-  {
-   "fieldname": "reference_type",
-   "fieldtype": "Link",
-   "label": "Reference Type",
-   "options": "DocType"
-  },
-  {
-   "fieldname": "reference_name",
-   "fieldtype": "Dynamic Link",
-   "label": "Reference Name",
-   "options": "reference_type"
-  },
   {
    "fieldname": "document_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Document Type",
    "options": "PDF\nXML\nHASH",
-   "reqd": 1
-  },
-  {
-   "fieldname": "document",
-   "fieldtype": "Attach",
-   "in_list_view": 1,
-   "label": "Document",
-   "reqd": 1
-  },
-  {
-   "fieldname": "signatory_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Signatory Name",
    "reqd": 1
   },
   {
@@ -86,7 +69,7 @@
    "fieldname": "select_page",
    "fieldtype": "Select",
    "label": "Select Page",
-   "options": "\nFirst\nLast\nAll\nEven Pages\nOdd Pages\nSpecify\nPage Level",
+   "options": "\nALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY\nPAGE LEVEL",
    "reqd": 1
   },
   {
@@ -128,12 +111,85 @@
    "fieldtype": "Select",
    "label": "Authentication Mode",
    "options": "OTP\nBiometric\nIris\nFace"
+  },
+  {
+   "fieldname": "emudhra_emsign_doctypes",
+   "fieldtype": "Table MultiSelect",
+   "label": "Emudhra emSigner Doctypes",
+   "options": "Emudhra emSigner Doctypes"
+  },
+  {
+   "fieldname": "section_break_pcpb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_upload_signature",
+   "fieldtype": "Check",
+   "label": "Enable Upload Signature"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_font_signature",
+   "fieldtype": "Check",
+   "label": "Enable Font Signature"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_draw_signature",
+   "fieldtype": "Check",
+   "label": "Enable Draw Signature"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_esignature_pad",
+   "fieldtype": "Check",
+   "label": "Enable eSignature Pad"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_view_document_link",
+   "fieldtype": "Check",
+   "label": "Enable View Document Link"
+  },
+  {
+   "fieldname": "column_break_zdaa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "store_to_db",
+   "fieldtype": "Check",
+   "label": "Store to db"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_compressed",
+   "fieldtype": "Check",
+   "label": "Is Compressed"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_gstin",
+   "fieldtype": "Check",
+   "label": "Is GSTIN"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_gstn3b",
+   "fieldtype": "Check",
+   "label": "Is GSTN3B"
+  },
+  {
+   "fieldname": "public_certificate",
+   "fieldtype": "Attach",
+   "label": "Public Certificate"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-27 19:07:53.627249",
+ "modified": "2025-02-04 10:40:38.734736",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "Emudhra emSigner Gateway",
