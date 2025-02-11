@@ -2,59 +2,106 @@
 // For license information, please see license.txt
 
 frappe.call({
-    method: 'frappe.client.get',
-    args: {
-        doctype: 'Emudhra emSigner Gateway',
-        name: 'Emudhra emSigner Gateway'
-    },
-    callback: function(response) {
-        let doctype_list = response.message["emudhra_emsign_doctypes"]
-		doctype_list.forEach(element => {
+	method: "frappe.client.get",
+	args: {
+		doctype: "emSigner Settings",
+		name: "emSigner Settings",
+	},
+	callback: function (response) {
+		let doctype_list = response.message["doctypes"];
+		doctype_list.forEach((element) => {
 			let doctype_name = element.doctype_name;
 			frappe.ui.form.on(doctype_name, {
-				refresh: function(frm) {
-					frm.add_custom_button('Sign', function() {
+				refresh: function (frm) {
+					frm.add_custom_button("Sign", function () {
 						let d = new frappe.ui.Dialog({
-							title: 'Enter details',
+							title: "Enter details",
 							fields: [
 								{
-									label: 'Name',
-									fieldname: 'name',
-									fieldtype: 'Data',
-									default: frappe.session.user_fullname
+									label: "Name",
+									fieldname: "name",
+									fieldtype: "Data",
+									default: frappe.session.user_fullname,
 								},
 								{
-									label: 'Print Format',
-									fieldname: 'print_format',
-									fieldtype: 'Link',
-									options: 'Print Format',
-									default: 'Standard'
+									label: "Print Format",
+									fieldname: "print_format",
+									fieldtype: "Link",
+									options: "Print Format",
+									default: "Standard",
 								},
 								{
-									label: 'Letter Head',
-									fieldname: 'letter_head',
-									fieldtype: 'Link',
-									options: 'Letter Head'
-								}
+									label: "Letter Head",
+									fieldname: "letter_head",
+									fieldtype: "Link",
+									options: "Letter Head",
+								},
+								{
+									label: "Select Page",
+									fieldname: "select_page",
+									fieldtype: "Select",
+									options: "\nALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY\nPAGE LEVEL",
+									reqd: 1,
+								},
+								{
+									label: "Page Number",
+									fieldname: "page_number",
+									fieldtype: "Data",
+									depends_on: 'eval:doc.select_page == "SPECIFY"',
+								},
+								{
+									label: "Page Level Coordinates",
+									fieldname: "page_level_coordinates",
+									fieldtype: "Data",
+									depends_on: 'eval:doc.select_page == "PAGE LEVEL"',
+								},
+								{
+									label: "Signature Position",
+									fieldname: "signature_position",
+									fieldtype: "Select",
+									default: "Bottom-Right",
+									options:
+										"Top-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
+									reqd: 1,
+								},
+								{
+									label: "Custom Co-ordinates",
+									fieldname: "customize_coordinates",
+									fieldtype: "Data",
+									depends_on: 'eval:doc.signature_position == "Customize"',
+								},
+								{
+									label: "Reason",
+									fieldname: "reason",
+									fieldtype: "Small Text",
+								},
 							],
-							size: 'small', 
-							primary_action_label: 'Submit',
+							size: "small",
+							primary_action_label: "Submit",
 							primary_action(values) {
-								console.log(values, "values")
+								console.log(values, "values");
 								frappe.call({
-									method: "emsigner.emsigner.doctype.emudhra_emsigner_gateway.emudhra_emsigner_gateway.get_emsigner_parameters",
+									method: "emsigner.emsigner.api.emsigner.get_emsigner_parameters",
 									args: {
-										"doctype_name": doctype_name,
-										"document_name": frm.doc.name,
-										"print_format": values.print_format,
-										"letter_head": values.letter_head,
-										"name": values.name
+										doctype_name: doctype_name,
+										document_name: frm.doc.name,
+										name: values.name,
+										print_format: values.print_format,
+										letter_head: values.letter_head,
+										select_page: values.select_page,
+										page_number: values.page_number,
+										page_level_coordinates: values.page_level_coordinates,
+										signature_position: values.signature_position,
+										customize_coordinates: values.customize_coordinates,
+										reason: values.reason,
 									},
 									callback: (response) => {
-                                        const iframeContent = response.message;
-                                        const iframeBlob = new Blob([iframeContent], { type: 'text/html' });
-                                        const iframeURL = URL.createObjectURL(iframeBlob);
-                                        const htmlWrapper = `
+										const iframeContent = response.message;
+										const iframeBlob = new Blob([iframeContent], {
+											type: "text/html",
+										});
+										const iframeURL = URL.createObjectURL(iframeBlob);
+										const htmlWrapper = `
                                             <!DOCTYPE html>
                                             <html lang="en">
                                             <head>
@@ -79,21 +126,27 @@ frappe.call({
                                             </body>
                                             </html>
                                         `;
-                                        const wrapperBlob = new Blob([htmlWrapper], { type: 'text/html' });
-                                        const wrapperURL = URL.createObjectURL(wrapperBlob);
-                                        const features = "width=800,height=600,noopener,noreferrer";
-                                        const newWindow = window.open(wrapperURL, "_blank", features);
-									}
+										const wrapperBlob = new Blob([htmlWrapper], {
+											type: "text/html",
+										});
+										const wrapperURL = URL.createObjectURL(wrapperBlob);
+										const features =
+											"width=800,height=600,noopener,noreferrer";
+										const newWindow = window.open(
+											wrapperURL,
+											"_blank",
+											features
+										);
+									},
 								});
 								d.hide();
-							}
+							},
 						});
-						
+
 						d.show();
 					});
 				},
-			})
-			
+			});
 		});
-    }
+	},
 });

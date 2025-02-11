@@ -1,0 +1,195 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-27 15:52:32.102030",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "credentials_tab",
+  "authentication_token",
+  "authentication_mode",
+  "column_break_xwjs",
+  "public_certificate",
+  "settings_tab",
+  "document_type",
+  "doctypes",
+  "column_break_jyyu",
+  "signature_mode",
+  "section_break_pcpb",
+  "enable_upload_signature",
+  "enable_font_signature",
+  "enable_draw_signature",
+  "enable_esignature_pad",
+  "enable_view_document_link",
+  "column_break_zdaa",
+  "store_to_db",
+  "is_compressed",
+  "is_gstin",
+  "is_gstn3b",
+  "preview_required"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Document Type",
+   "options": "PDF",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "Usually, an Authtoken is a unique identifier of\nan application requesting access to our\nservice. emSigner would generate a unique\nAuthtoken for each customer to access\nemSigner signer gateway service. Pass valid\nunique Authtoken generated for your account.",
+   "fieldname": "authentication_token",
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "Authentication Token",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "By default, this will be FALSE.\nIf you want to show preview to the user when\nredirected to emSigner signer gateway page.\n\nPass TRUE if the preview is required before\nsigning the document.\nNote: Not applicable to dsign",
+   "fieldname": "preview_required",
+   "fieldtype": "Check",
+   "label": "Preview Required"
+  },
+  {
+   "fieldname": "column_break_xwjs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "This parameter describes the signature mode\nto be enabled for completing the request.\nCurrently, we support four signature options\ni.e. dSign, eSign, eSignature and eIDAS.\n\u2022\ndSign: Requires Crypto Token and\nvalid digital signature issued by licensed\nCertifying Authorities to digitally sign the\nrequest.\n\u2022\neSign v3: eMudhra KYC based signing\n\u2022\neSignature: eSignature is not valid in\nIndia, but it is widely accepted in other\ncountries.\n\u2022\neSign v2.1: eSign (Aadhar based\nsigning) is valid ONLY in India.",
+   "fieldname": "signature_mode",
+   "fieldtype": "Select",
+   "label": "Signature Mode",
+   "options": "\ndSign\neSign\neSign v3",
+   "reqd": 1
+  },
+  {
+   "fieldname": "authentication_mode",
+   "fieldtype": "Select",
+   "label": "Authentication Mode",
+   "options": "OTP\nBiometric\nIris\nFace"
+  },
+  {
+   "fieldname": "section_break_pcpb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to upload\nhandwritten signature in emSigner Signer\nGateway page and the same will be affixed on\nthe signed PDF document And using this\noption will invalidate any signed document\nsent for signing again by another signatory.\n\nPass TRUE if you want to enable upload\nsignature option in the gateway.\n\nNote: If the user selects signature type as\neSignature or combination of that, then at\nthat time any of the parameter i.e. enable\neSignature pad/enable draw signature/enable\nfont signature/enable upload signature is\nmandatory.\n\nFor dSign, it is not mandatory.",
+   "fieldname": "enable_upload_signature",
+   "fieldtype": "Check",
+   "label": "Enable Upload Signature"
+  },
+  {
+   "default": "0",
+   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to choose or\ngenerate some font based signature in\nemSigner Signer Gateway page and the same\nwill be affixed on the signed PDF document\nAnd using this option will invalidate any\nsigned document sent for signing again by\nanother signatory.\n\nPass TRUE if you want to enable font based\nsignatures to be visible in the gateway.\nNote: If the user selects signature type as\neSignature or combination of that, then at\nthat time any of the parameter i.e. enable\neSignature pad/enable draw signature/enable\nfont signature/enable upload signature is\nmandatory.\nFor dSign, it is not mandatory.",
+   "fieldname": "enable_font_signature",
+   "fieldtype": "Check",
+   "label": "Enable Font Signature"
+  },
+  {
+   "default": "0",
+   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to draw\nsignature in emSigner Signer Gateway page\nand the same will be affixed on the signed\nPDF document And using this option will\ninvalidate any signed document sent for\nsigning again by another signatory.\n\nPass TRUE if you want to enable draw\nsignature option in the gateway.\nNote: If the user selects signature type as\neSignature or combination of that, then at\nthat time any of the parameter i.e. enable\neSignature pad/enable draw\nsignature/enable font signature/enable\nupload signature is mandatory.\nFor dSign, it is not mandatory.",
+   "fieldname": "enable_draw_signature",
+   "fieldtype": "Check",
+   "label": "Enable Draw Signature"
+  },
+  {
+   "default": "0",
+   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to connect to\nthird-party signature pads. Currently, we\nsupport Topaz signature pad in emSigner\nSigner Gateway page and the same will be\naffixed on the signed PDF document And\nusing this option will invalidate any signed\ndocument sent for signing again by another\nsignatory.\nPass TRUE if you want to enable eSignature\npad option in the gateway.",
+   "fieldname": "enable_esignature_pad",
+   "fieldtype": "Check",
+   "label": "Enable eSignature Pad"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_view_document_link",
+   "fieldtype": "Check",
+   "label": "Enable View Document Link"
+  },
+  {
+   "fieldname": "column_break_zdaa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "By default this value would be FALSE.\nPass it as TRUE if you want to save the\nresponse data with us.\n\nIn case of failure you can request us by calling\nour API's before 48 hours (If Storetodb=TRUE).\nRefer to Transaction Request API section, for\nmore info.\nRefer to Signed Data Request API section, for\nmore info.",
+   "fieldname": "store_to_db",
+   "fieldtype": "Check",
+   "label": "Store to db"
+  },
+  {
+   "default": "0",
+   "description": "If the file size is more than 10mb, you can\ncompress and share the file",
+   "fieldname": "is_compressed",
+   "fieldtype": "Check",
+   "label": "Is Compressed"
+  },
+  {
+   "default": "0",
+   "description": "By default this value will be FALSE.\n\nPass TRUE if you want to sign GSTR1 data and\nPass \"IsGSTN3B\" as FALSE.\nPass file value as Base 64 of (GSTR1 JSON\ndata)",
+   "fieldname": "is_gstin",
+   "fieldtype": "Check",
+   "label": "Is GSTIN"
+  },
+  {
+   "default": "0",
+   "description": "By default this value will be FALSE.\n\nPass TRUE if you want to sign GSTR3B data\nand Pass \"IsGSTN\" as FALSE.\nPass file value as Base 64 of (Part A~Part B)",
+   "fieldname": "is_gstn3b",
+   "fieldtype": "Check",
+   "label": "Is GSTN3B"
+  },
+  {
+   "description": "Attach your public certificate.",
+   "fieldname": "public_certificate",
+   "fieldtype": "Attach",
+   "label": "Public Certificate"
+  },
+  {
+   "description": "Select the doctypes in which the PDFs needs to signed.",
+   "fieldname": "doctypes",
+   "fieldtype": "Table MultiSelect",
+   "label": "Doctypes",
+   "options": "emSigner Doctype"
+  },
+  {
+   "fieldname": "credentials_tab",
+   "fieldtype": "Tab Break",
+   "label": "Credentials"
+  },
+  {
+   "fieldname": "settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Settings"
+  },
+  {
+   "fieldname": "column_break_jyyu",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-02-11 13:03:40.114751",
+ "modified_by": "Administrator",
+ "module": "emSigner",
+ "name": "emSigner Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

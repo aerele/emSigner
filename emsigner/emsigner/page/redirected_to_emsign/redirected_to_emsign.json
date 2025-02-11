@@ -1,0 +1,26 @@
+{
+ "content": null,
+ "creation": "2025-02-11 16:05:17.769631",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2025-02-11 16:05:28.675936",
+ "modified_by": "Administrator",
+ "module": "emSigner",
+ "name": "redirected-to-emsign",
+ "owner": "Administrator",
+ "page_name": "redirected-to-emsign",
+ "roles": [
+  {
+   "role": "Guest"
+  },
+  {
+   "role": "All"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Redirected to emSigner portal"
+}

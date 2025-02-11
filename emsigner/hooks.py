@@ -29,10 +29,6 @@ app_license = "mit"
 
 app_include_js = "emsigner.bundle.js"
 
-fixtures = [
-	"Web Page"
-]
-
 # include js, css files in header of web template
 # web_include_css = "/assets/emsigner/css/emsigner.css"
 # web_include_js = "/assets/emsigner/js/emsigner.js"
@@ -249,4 +245,3 @@ fixtures = [
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-

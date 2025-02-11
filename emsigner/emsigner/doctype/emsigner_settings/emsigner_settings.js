@@ -1,7 +1,7 @@
 // Copyright (c) 2025, Aerele Technologies Private Limited and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("Emudhra emSigner log", {
+// frappe.ui.form.on("emSigner Settings", {
 // 	refresh(frm) {
 
 // 	},

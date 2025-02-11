@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Failure</title>
+    <style>
+        /* Hide Frappe Header, Footer, and Sidebars */
+        .navbar, .footer, #page-desktop, #page-header {
+            display: none !important;
+        }
+        /* Body Styling */
+        body {
+            background-color: #f4f6f8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        /* Failure Page Container */
+        .container {
+            background: white;
+            padding: 40px 50px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+        }
+        .crossmark {
+            font-size: 100px;
+            color: #D32F2F;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #D32F2F;
+            border: none;
+            border-radius: 50px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #C62828;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="crossmark">&#10060;</div>
+        <h1>Failure</h1>
+        <p>Something went wrong. The document could not be signed.</p>
+    </div>
+
+</body>
+</html>
