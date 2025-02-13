@@ -26,7 +26,9 @@
   "is_compressed",
   "is_gstin",
   "is_gstn3b",
-  "preview_required"
+  "preview_required",
+  "logs_tab",
+  "clear_logs_after_days"
  ],
  "fields": [
   {
@@ -167,12 +169,24 @@
   {
    "fieldname": "column_break_jyyu",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "90",
+   "description": "Logs will be deleted once they exceed the specified number of days.",
+   "fieldname": "clear_logs_after_days",
+   "fieldtype": "Int",
+   "label": "Clear Logs After (days)"
+  },
+  {
+   "fieldname": "logs_tab",
+   "fieldtype": "Tab Break",
+   "label": "Logs"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-11 13:03:40.114751",
+ "modified": "2025-02-13 16:09:58.334665",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",
