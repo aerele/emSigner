@@ -102,30 +102,30 @@ frappe.call({
 										});
 										const iframeURL = URL.createObjectURL(iframeBlob);
 										const htmlWrapper = `
-                                            <!DOCTYPE html>
-                                            <html lang="en">
-                                            <head>
-                                                <meta charset="UTF-8">
-                                                <title>Emudhra emsign Portal</title>
-                                                <style>
-                                                    body, html {
-                                                        margin: 0;
-                                                        padding: 0;
-                                                        height: 100%;
-                                                        overflow: hidden;
-                                                    }
-                                                    iframe {
-                                                        border: none;
-                                                        width: 100%;
-                                                        height: 100%;
-                                                    }
-                                                </style>
-                                            </head>
-                                            <body>
-                                                <iframe id="contentIframe" src="${iframeURL}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-                                            </body>
-                                            </html>
-                                        `;
+											<!DOCTYPE html>
+											<html lang="en">
+											<head>
+												<meta charset="UTF-8">
+												<title>emSign Portal</title>
+												<style>
+													body, html {
+														margin: 0;
+														padding: 0;
+														height: 100%;
+														overflow: hidden;
+													}
+													iframe {
+														border: none;
+														width: 100%;
+														height: 100%;
+													}
+												</style>
+											</head>
+											<body>
+												<iframe id="contentIframe" src="${iframeURL}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+											</body>
+											</html>
+										`;
 										const wrapperBlob = new Blob([htmlWrapper], {
 											type: "text/html",
 										});
@@ -142,7 +142,6 @@ frappe.call({
 								d.hide();
 							},
 						});
-
 						d.show();
 					});
 				},

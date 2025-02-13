@@ -33,9 +33,7 @@ def get_emsigner_parameters(**args):
 		"PagelevelCoordinates": args.get("page_level_coordinates"),
 		"CustomizeCoordinates": args.get("customize_coordinates"),
 		"ReferenceNumber": ref_number,
-		"AuthToken": get_decrypted_password(
-			"emSigner Settings", "emSigner Settings", fieldname="authentication_token"
-		),
+		"AuthToken": settings_doc.get_password("authentication_token"),
 		"SignatureType": 0,
 		"SignatureMode": "3",
 		"AuthenticationMode": authentication_mode[settings_doc.authentication_mode],

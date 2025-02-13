@@ -1,7 +1,7 @@
 app_name = "emsigner"
 app_title = "emSigner"
 app_publisher = "Aerele Technologies Private Limited"
-app_description = "Integrating Emudhra emSigner in ERPNext"
+app_description = "Integrating emSigner in ERPNext"
 app_email = "hello@aerele.in"
 app_license = "mit"
 
@@ -152,23 +152,21 @@ app_include_js = "emsigner.bundle.js"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"emsigner.tasks.all"
-# 	],
-# 	"daily": [
-# 		"emsigner.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"emsigner.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"emsigner.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"emsigner.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# 	"all": [
+	# 		"emsigner.tasks.all"
+	# 	],
+	"daily": ["emsigner.emsigner.doctype.emsigner_log.emsigner_log.clear_emsigner_logs_after_days_rq_job"],
+	# 	"hourly": [
+	# 		"emsigner.tasks.hourly"
+	# 	],
+	# 	"weekly": [
+	# 		"emsigner.tasks.weekly"
+	# 	],
+	# 	"monthly": [
+	# 		"emsigner.tasks.monthly"
+	# 	],
+}
 
 # Testing
 # -------
