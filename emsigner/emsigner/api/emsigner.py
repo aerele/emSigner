@@ -46,7 +46,6 @@ def get_emsigner_parameters(**args):
 		"EnableDrawSignature": bool(settings_doc.enable_draw_signature),
 		"EnableeSignaturePad": bool(settings_doc.enable_esignature_pad),
 		"Storetodb": bool(settings_doc.store_to_db),
-		"EnableViewDocumentLink": bool(settings_doc.enable_view_document_link),
 		"SUrl": f"{frappe.utils.get_url()}/api/method/emsigner.emsigner.api.emsigner_decrypt.decrypt_method",
 		"FUrl": f"{frappe.utils.get_url()}/emsigner_furl",
 		"CUrl": f"{frappe.utils.get_url()}/emsigner_curl",
