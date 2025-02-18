@@ -20,7 +20,6 @@
   "enable_font_signature",
   "enable_draw_signature",
   "enable_esignature_pad",
-  "enable_view_document_link",
   "column_break_zdaa",
   "store_to_db",
   "is_compressed",
@@ -106,12 +105,6 @@
    "label": "Enable eSignature Pad"
   },
   {
-   "default": "0",
-   "fieldname": "enable_view_document_link",
-   "fieldtype": "Check",
-   "label": "Enable View Document Link"
-  },
-  {
    "fieldname": "column_break_zdaa",
    "fieldtype": "Column Break"
   },
@@ -186,7 +179,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-13 16:09:58.334665",
+ "modified": "2025-02-18 17:03:19.727678",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",
