@@ -38,7 +38,7 @@ def decrypt_method():
 	create_attachment(reference_no, decrypt_data)
 
 	frappe.local.response["type"] = "redirect"
-	frappe.local.response["location"] = "/emSignerParameters"
+	frappe.local.response["location"] = "/emsigner_success_page"
 
 
 def create_attachment(reference_no, content):

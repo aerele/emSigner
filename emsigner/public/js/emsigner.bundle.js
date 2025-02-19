@@ -41,6 +41,7 @@ frappe.call({
 									fieldname: "select_page",
 									fieldtype: "Select",
 									options: "\nALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY\nPAGE LEVEL",
+									default: "ALL",
 									reqd: 1,
 								},
 								{
@@ -59,9 +60,9 @@ frappe.call({
 									label: "Signature Position",
 									fieldname: "signature_position",
 									fieldtype: "Select",
-									default: "Bottom-Right",
 									options:
 										"Top-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
+									default: "Bottom-Right",
 									reqd: 1,
 								},
 								{
@@ -79,7 +80,6 @@ frappe.call({
 							size: "small",
 							primary_action_label: "Submit",
 							primary_action(values) {
-								console.log(values, "values");
 								frappe.call({
 									method: "emsigner.emsigner.api.emsigner.get_emsigner_parameters",
 									args: {

@@ -47,8 +47,8 @@ def get_emsigner_parameters(**args):
 		"EnableeSignaturePad": bool(settings_doc.enable_esignature_pad),
 		"Storetodb": bool(settings_doc.store_to_db),
 		"SUrl": f"{frappe.utils.get_url()}/api/method/emsigner.emsigner.api.emsigner_decrypt.decrypt_method",
-		"FUrl": f"{frappe.utils.get_url()}/emsigner_furl",
-		"CUrl": f"{frappe.utils.get_url()}/emsigner_curl",
+		"FUrl": f"{frappe.utils.get_url()}/emsigner_failure_page",
+		"CUrl": f"{frappe.utils.get_url()}/emsigner_cancel_page",
 		"IsCompressed": bool(settings_doc.is_compressed),
 		"IsGSTN": bool(settings_doc.is_gstin),
 		"IsGSTN3B": bool(settings_doc.is_gstn3b),
@@ -80,7 +80,6 @@ def get_emsigner_parameters(**args):
 		session_key,
 		encrypted_session_key,
 		ref_number,
-		encrypted_data,
 		encrypted_hash,
 	)
 
@@ -122,13 +121,7 @@ def generate_html_wrapper(encrypted_session_key, encrypted_data, encrypted_hash)
 
 
 def create_emsigner_log(
-	doctype,
-	docname,
-	session_key=None,
-	encrypted_session_key=None,
-	ref_number=None,
-	encrypted_data=None,
-	encrypted_hash=None,
+	doctype, docname, session_key=None, encrypted_session_key=None, ref_number=None, encrypted_hash=None
 ):
 	emsigner_log = frappe.new_doc("emSigner Log")
 	emsigner_log.update(
@@ -138,7 +131,6 @@ def create_emsigner_log(
 			"session_key": session_key.decode("utf-8"),
 			"encrypted_session_key": encrypted_session_key,
 			"reference_id": ref_number,
-			"encrypted_data": encrypted_data,
 			"payload_json": encrypted_hash,
 		}
 	)

@@ -10,7 +10,6 @@
   "session_key",
   "encrypted_session_key",
   "reference_id",
-  "encrypted_data",
   "payload_json"
  ],
  "fields": [
@@ -30,12 +29,6 @@
    "fieldname": "reference_id",
    "fieldtype": "Text",
    "label": "Reference ID",
-   "read_only": 1
-  },
-  {
-   "fieldname": "encrypted_data",
-   "fieldtype": "Text",
-   "label": "Encrypted Data",
    "read_only": 1
   },
   {
@@ -59,7 +52,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-31 17:21:16.243769",
+ "modified": "2025-02-19 17:52:16.815140",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Log",
