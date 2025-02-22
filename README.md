@@ -1,6 +1,6 @@
 ### emSigner
 
-Integrating Emudhra emSigner in ERPNext
+Integrating emSigner in ERPNext
 
 ### Installation
 

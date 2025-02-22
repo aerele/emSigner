@@ -1,7 +1,7 @@
 app_name = "emsigner"
 app_title = "emSigner"
 app_publisher = "Aerele Technologies Private Limited"
-app_description = "Integrating Emudhra emSigner in ERPNext"
+app_description = "Integrating emSigner in ERPNext"
 app_email = "hello@aerele.in"
 app_license = "mit"
 
@@ -27,7 +27,7 @@ app_license = "mit"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/emsigner/css/emsigner.css"
 
-# app_include_js = "emsigner.bundle.js"
+app_include_js = "emsigner.bundle.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/emsigner/css/emsigner.css"
@@ -152,23 +152,21 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"emsigner.tasks.all"
-# 	],
-# 	"daily": [
-# 		"emsigner.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"emsigner.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"emsigner.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"emsigner.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# 	"all": [
+	# 		"emsigner.tasks.all"
+	# 	],
+	"daily": ["emsigner.emsigner.doctype.emsigner_log.emsigner_log.clear_emsigner_logs_after_days_rq_job"],
+	# 	"hourly": [
+	# 		"emsigner.tasks.hourly"
+	# 	],
+	# 	"weekly": [
+	# 		"emsigner.tasks.weekly"
+	# 	],
+	# 	"monthly": [
+	# 		"emsigner.tasks.monthly"
+	# 	],
+}
 
 # Testing
 # -------
@@ -245,4 +243,3 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-

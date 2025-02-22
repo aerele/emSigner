@@ -1,0 +1,77 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-30 16:30:33.243216",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "doctype_name",
+  "document_name",
+  "session_key",
+  "encrypted_session_key",
+  "reference_id",
+  "payload_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "session_key",
+   "fieldtype": "Text",
+   "label": "Session Key",
+   "read_only": 1
+  },
+  {
+   "fieldname": "encrypted_session_key",
+   "fieldtype": "Text",
+   "label": "Encrypted Session Key",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_id",
+   "fieldtype": "Text",
+   "label": "Reference ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payload_json",
+   "fieldtype": "Text",
+   "label": "Payload JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "doctype_name",
+   "fieldtype": "Data",
+   "label": "Doctype Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "document_name",
+   "fieldtype": "Data",
+   "label": "Document Name",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-02-19 17:52:16.815140",
+ "modified_by": "Administrator",
+ "module": "emSigner",
+ "name": "emSigner Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
