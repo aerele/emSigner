@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-02-22 13:37:08.447665",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "signatory",
+  "signatory_name",
+  "signatory_email",
+  "sign_position",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "signatory",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Signatory",
+   "options": "User"
+  },
+  {
+   "fetch_from": "signatory.full_name",
+   "fetch_if_empty": 1,
+   "fieldname": "signatory_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Signatory Name"
+  },
+  {
+   "fetch_from": "signatory.email",
+   "fetch_if_empty": 1,
+   "fieldname": "signatory_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Signatory Email"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sign_position",
+   "fieldtype": "Data",
+   "label": "Sign Position",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-22 16:34:57.099105",
+ "modified_by": "Administrator",
+ "module": "emSigner",
+ "name": "emSigner Signatory Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

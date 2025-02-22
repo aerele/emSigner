@@ -27,7 +27,9 @@
   "is_gstn3b",
   "preview_required",
   "logs_tab",
-  "clear_logs_after_days"
+  "clear_logs_after_days",
+  "autorization_tab",
+  "authorized_signatory"
  ],
  "fields": [
   {
@@ -174,12 +176,23 @@
    "fieldname": "logs_tab",
    "fieldtype": "Tab Break",
    "label": "Logs"
+  },
+  {
+   "fieldname": "autorization_tab",
+   "fieldtype": "Tab Break",
+   "label": "Autorization"
+  },
+  {
+   "fieldname": "authorized_signatory",
+   "fieldtype": "Table",
+   "label": "Authorized Signatory",
+   "options": "emSigner Authorized Signatory"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-22 12:53:49.920971",
+ "modified": "2025-02-22 16:24:36.059124",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",
