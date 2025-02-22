@@ -165,7 +165,7 @@
   },
   {
    "default": "90",
-   "description": "Logs will be deleted once they exceed the specified number of days.",
+   "description": "Logs will be deleted once they exceed the specified number of days.\n\nIf you don't want the logs to be cleared automatically, then set the value to 0.",
    "fieldname": "clear_logs_after_days",
    "fieldtype": "Int",
    "label": "Clear Logs After (days)"
@@ -179,7 +179,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-18 17:03:19.727678",
+ "modified": "2025-02-22 12:53:49.920971",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",

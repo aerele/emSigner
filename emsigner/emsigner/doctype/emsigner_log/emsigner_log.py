@@ -23,5 +23,6 @@ def clear_emsigner_logs_after_days_rq_job():
 
 def clear_emsigner_logs_after_days():
 	no_of_days = frappe.db.get_value("emSigner Settings", "emSigner Settings", "clear_logs_after_days")
-	delete_upto = (datetime.today() - timedelta(days=cint(no_of_days))).date()
-	frappe.db.delete("emSigner Log", {"creation": ["<", f"{delete_upto} 23:59:59"]})
+	if no_of_days > 0:
+		delete_upto = (datetime.today() - timedelta(days=cint(no_of_days))).date()
+		frappe.db.delete("emSigner Log", {"creation": ["<", f"{delete_upto} 23:59:59"]})
