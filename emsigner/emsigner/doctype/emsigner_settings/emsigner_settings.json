@@ -10,6 +10,7 @@
   "authentication_mode",
   "column_break_xwjs",
   "public_certificate",
+  "session_key",
   "settings_tab",
   "document_type",
   "doctypes",
@@ -187,12 +188,17 @@
    "fieldtype": "Table",
    "label": "Authorized Signatory",
    "options": "emSigner Authorized Signatory"
+  },
+  {
+   "fieldname": "session_key",
+   "fieldtype": "Password",
+   "label": "Session Key"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-22 16:24:36.059124",
+ "modified": "2025-02-23 16:34:01.559468",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",

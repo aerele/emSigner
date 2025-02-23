@@ -1,34 +1,22 @@
 import base64
-import binascii
 import hashlib
 import json
-import os
-import uuid
 
 import frappe
-from frappe.utils.password import get_decrypted_password
-from frappe.utils.pdf import get_pdf
 
 from emsigner.emsigner.utils.py.aes_ecb_cipher import AES_ECB_Cipher
 from emsigner.emsigner.utils.py.rsa_encryption import RSAEncryption
 
 
-@frappe.whitelist()
 def get_emsigner_parameters(**args):
 	authentication_mode = {"OTP": 1, "Biometric": 2, "Iris": 3, "Face": 4}
 	settings_doc = frappe.get_doc("emSigner Settings")
-	html = frappe.get_print(
-		doctype=args["doctype_name"],
-		name=args["document_name"],
-		print_format=args.get("print_format"),
-		letterhead=args.get("letter_head"),
-	)
 
-	ref_number = uuid.uuid4().hex
+	ref_number = args["reference_id"]
 	data = {
-		"Name": args.get("name"),
+		"Name": args.get("signatory_name"),
 		"FileType": "PDF",
-		"File": base64.b64encode(get_pdf(html)).decode("utf-8"),
+		"File": args.get("file_content"),
 		"PageNumber": args.get("page_number"),
 		"PagelevelCoordinates": args.get("page_level_coordinates"),
 		"CustomizeCoordinates": args.get("customize_coordinates"),
@@ -57,7 +45,7 @@ def get_emsigner_parameters(**args):
 
 	json_data = json.dumps(data)
 
-	session_key = generate_session_key(16)
+	session_key = settings_doc.get_password("session_key").encode("utf-8")
 
 	aes_cipher = AES_ECB_Cipher(key=session_key)
 	encrypted_data = aes_cipher.encrypt(json_data).decode("utf-8")
@@ -72,67 +60,23 @@ def get_emsigner_parameters(**args):
 	encrypted_binary = aes_cipher.encrypt(hash_data, encode=False)
 	encrypted_hash = base64.b64encode(encrypted_binary).decode("utf-8")
 
-	html_wrapper = generate_html_wrapper(encrypted_session_key, encrypted_data, encrypted_hash)
+	signing_data = {
+		"encrypted_session_key": encrypted_session_key,
+		"encrypted_data": encrypted_data,
+		"encrypted_hash": encrypted_hash,
+	}
+	set_signing_data(signing_data)
 
-	create_emsigner_log(
-		args["doctype_name"],
-		args["document_name"],
-		session_key,
-		encrypted_session_key,
-		ref_number,
-		encrypted_hash,
-	)
-
-	return html_wrapper
-
-
-def generate_session_key(key_size):
-	session_key = os.urandom(16)
-	session_key = binascii.hexlify(session_key).decode("utf-8").encode("utf-8")
-
-	return session_key
+	# Redirect to the eMudhra signing redirect page
+	redirect_url = "/app/emudhra_signing_redirect"
+	frappe.local.response["type"] = "redirect"
+	frappe.local.response["location"] = frappe.utils.get_url(redirect_url)
 
 
-def generate_html_wrapper(encrypted_session_key, encrypted_data, encrypted_hash):
-	html_wrapper = f"""
-	<html>
-		<head>
-			<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-			<script>
-				$(document).ready(function() {{ $('#signDocForm').submit(); }});
-			</script>
-		</head>
-		<body>
-			<table align="center">
-				<tbody>
-					<tr><td><strong>You are being redirected to emSigner portal</strong></td></tr>
-					<tr><td><font color="blue">Please wait ...</font></td></tr>
-					<tr><td>(Please do not press 'Refresh' or 'Back' button)</td></tr>
-				</tbody>
-			</table>
-			<form id="signDocForm" name="signDocForm" method="post" action="https://demosignergateway.emsigner.com/eMsecure/V3_0/Index">
-				<input type="hidden" name="Parameter1" id="Parameter1" value="{encrypted_session_key}">
-				<input type="hidden" name="Parameter2" id="Parameter2" value="{encrypted_data}">
-				<input type="hidden" name="Parameter3" id="Parameter3" value="{encrypted_hash}">
-			</form>
-		</body>
-	</html>"""
-	return html_wrapper
+def set_signing_data(signing_data):
+	frappe.cache().hset("signing_data_cache", "signing_data", signing_data)
 
 
-def create_emsigner_log(
-	doctype, docname, session_key=None, encrypted_session_key=None, ref_number=None, encrypted_hash=None
-):
-	emsigner_log = frappe.new_doc("emSigner Log")
-	emsigner_log.update(
-		{
-			"doctype_name": doctype,
-			"document_name": docname,
-			"session_key": session_key.decode("utf-8"),
-			"encrypted_session_key": encrypted_session_key,
-			"reference_id": ref_number,
-			"payload_json": encrypted_hash,
-		}
-	)
-
-	emsigner_log.insert()
+@frappe.whitelist(allow_guest=True)
+def get_signing_data():
+	return frappe.cache().hget("signing_data_cache", "signing_data")
