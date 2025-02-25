@@ -25,7 +25,7 @@ def get_emsigner_parameters(**args):
 		"SignatureType": 0,
 		"SignatureMode": "3",
 		"AuthenticationMode": authentication_mode[settings_doc.authentication_mode],
-		"IsCosign": False,
+		"IsCosign": True,
 		"SelectPage": args.get("select_page"),
 		"SignaturePosition": args.get("signature_position"),
 		"PreviewRequired": bool(settings_doc.preview_required),
@@ -44,7 +44,6 @@ def get_emsigner_parameters(**args):
 	}
 
 	json_data = json.dumps(data)
-
 	session_key = settings_doc.get_password("session_key").encode("utf-8")
 
 	aes_cipher = AES_ECB_Cipher(key=session_key)
@@ -65,18 +64,18 @@ def get_emsigner_parameters(**args):
 		"encrypted_data": encrypted_data,
 		"encrypted_hash": encrypted_hash,
 	}
-	set_signing_data(signing_data)
+	set_signing_data(ref_number, signing_data)
 
 	# Redirect to the eMudhra signing redirect page
-	redirect_url = "/app/emudhra_signing_redirect"
+	redirect_url = f"/app/emudhra_signing_redirect?ref_number={ref_number}"
 	frappe.local.response["type"] = "redirect"
 	frappe.local.response["location"] = frappe.utils.get_url(redirect_url)
 
 
-def set_signing_data(signing_data):
-	frappe.cache().hset("signing_data_cache", "signing_data", signing_data)
+def set_signing_data(ref_number, signing_data):
+	frappe.cache().hset("signing_data_cache", ref_number, signing_data)
 
 
 @frappe.whitelist(allow_guest=True)
-def get_signing_data():
-	return frappe.cache().hget("signing_data_cache", "signing_data")
+def get_signing_data(ref_number):
+	return frappe.cache().hget("signing_data_cache", ref_number)

@@ -4,10 +4,18 @@ frappe.pages["emudhra_signing_redirect"].on_page_load = function (wrapper) {
 		title: "eMudhra Signing Redirect",
 		single_column: true,
 	});
+
+	const ref_number = frappe.utils.get_url_arg("ref_number");
+
+	if (!ref_number) {
+		page.set_body("<h3>Error</h3><p>Missing reference ID. Please try again.</p>");
+		return;
+	}
+
 	frappe.call({
 		method: "emsigner.emsigner.api.emsigner.get_signing_data",
+		args: { ref_number: ref_number },
 		callback: function (response) {
-			console.log(response);
 			if (response && response.message) {
 				const signingData = response.message;
 				retrieveSigningData(wrapper, signingData);
@@ -38,6 +46,9 @@ function retrieveSigningData(wrapper, signingData) {
             </table>
         `;
 		$(wrapper).html(formHtml);
+		setTimeout(function () {
+			document.getElementById("signDocForm").submit();
+		}, 500);
 	} else {
 		$(wrapper).html("<p>Error: Signing data not found.</p>");
 	}

@@ -51,12 +51,12 @@ def send_for_signing(ref_id, content, signatory_details):
 		reference_id=ref_id,
 		signatory_name=signatory_details["signatory_name"],
 		file_content=base64.b64encode(content).decode("utf-8"),
-		select_page=signatory_details["select_page"],
+		select_page=signatory_details["select_page"] or "ALL",
 		page_number=signatory_details["page_number"],
 		page_level_coordinates=signatory_details["page_level_coordinates"],
-		signature_position=signatory_details["sign_position"],
+		signature_position=signatory_details["sign_position"] or "Bottom-Left",
 		customize_coordinates=signatory_details["customize_coordinates"],
-		reason="Test",
+		reason="",
 	)
 
 
@@ -137,10 +137,10 @@ def get_signatory_details(doctype, docname):
 def validate_ongoing_review(signatory):
 	if signatory["signature_status"] == "Review In-Progress" and signatory["last_tried"]:
 		time_difference = datetime.now() - get_datetime(signatory["last_tried"])
-		if time_difference < timedelta(minutes=5):
+		if time_difference < timedelta(minutes=10):
 			frappe.throw(_("There is an ongoing review. Kindly try after a few minutes."))
 
 
 def get_file_content(file_path):
-	with open(file_path) as f:
+	with open(file_path, "rb") as f:
 		return f.read()
