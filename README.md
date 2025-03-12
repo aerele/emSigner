@@ -1,6 +1,8 @@
 ### emSigner
 
-Integrating emSigner in ERPNext
+Integrating emSigner in ERPNext. Electronically or digitally sign documents such as Invoices or Purchase orders using legally valid digital signature certificates or an Aadhar OTP with a couple of clicks. 
+
+Enable any doctype for e-signatures from the authorised signatories from the settings.
 
 ### Installation
 
@@ -9,7 +11,7 @@ You can install this app using the [bench](https://github.com/frappe/bench) CLI:
 ```bash
 cd $PATH_TO_YOUR_BENCH
 bench get-app $URL_OF_THIS_REPO --branch develop
-bench install-app emsigner
+bench --site <site-name> install-app emsigner
 ```
 
 ### Contributing
