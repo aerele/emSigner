@@ -13,6 +13,13 @@ cd $PATH_TO_YOUR_BENCH
 bench get-app $URL_OF_THIS_REPO --branch develop
 bench --site <site-name> install-app emsigner
 ```
+### Demo
+
+
+
+https://github.com/user-attachments/assets/dc97d616-f190-4f2b-8139-17a389140aeb
+
+
 
 ### Contributing
 
