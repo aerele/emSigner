@@ -10,6 +10,7 @@ from emsigner.emsigner.utils.py.rsa_encryption import RSAEncryption
 
 def get_emsigner_parameters(**args):
 	authentication_mode = {"OTP": 1, "Biometric": 2, "Iris": 3, "Face": 4}
+	signature_mode = {"Aadhar": 12, "dSign": 1, "eSign v3": 2, "eSign": 3}
 	settings_doc = frappe.get_doc("emSigner Settings")
 
 	ref_number = args["reference_id"]
@@ -23,7 +24,7 @@ def get_emsigner_parameters(**args):
 		"ReferenceNumber": ref_number,
 		"AuthToken": settings_doc.get_password("authentication_token"),
 		"SignatureType": 0,
-		"SignatureMode": "3",
+		"SignatureMode": signature_mode[settings_doc.signature_mode],
 		"AuthenticationMode": authentication_mode[settings_doc.authentication_mode],
 		"IsCosign": True,
 		"SelectPage": args.get("select_page"),

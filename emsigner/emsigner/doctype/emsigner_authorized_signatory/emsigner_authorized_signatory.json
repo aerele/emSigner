@@ -9,7 +9,12 @@
   "permitted_doctype",
   "signatory",
   "signatory_name",
-  "signatory_email"
+  "signatory_email",
+  "column_break_ceab",
+  "select_page",
+  "sign_position",
+  "customize_coordinates",
+  "place_sign"
  ],
  "fields": [
   {
@@ -25,7 +30,8 @@
    "fieldname": "signatory_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Signatory Name"
+   "label": "Signatory Name",
+   "reqd": 1
   },
   {
    "fetch_from": "signatory.email",
@@ -33,7 +39,8 @@
    "fieldname": "signatory_email",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Signatory Email"
+   "label": "Signatory Email",
+   "reqd": 1
   },
   {
    "fieldname": "permitted_doctype",
@@ -41,12 +48,44 @@
    "in_list_view": 1,
    "label": "Permitted Doctype",
    "options": "DocType"
+  },
+  {
+   "fieldname": "column_break_ceab",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sign_position",
+   "fieldtype": "Select",
+   "label": "Sign Position",
+   "options": "\nTop-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
+   "reqd": 1
+  },
+  {
+   "fieldname": "select_page",
+   "fieldtype": "Select",
+   "label": "Select Page",
+   "options": "\nALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY\nPAGE LEVEL",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.sign_position == \"Customize\"",
+   "fieldname": "customize_coordinates",
+   "fieldtype": "Data",
+   "label": "Customize Coordinates",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.sign_position == \"Customize\"",
+   "fieldname": "place_sign",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Place Sign"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-22 16:34:16.198745",
+ "modified": "2025-03-14 12:48:49.974950",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Authorized Signatory",

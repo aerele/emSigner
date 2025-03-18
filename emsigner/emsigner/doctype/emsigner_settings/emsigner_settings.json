@@ -27,10 +27,9 @@
   "is_gstin",
   "is_gstn3b",
   "preview_required",
-  "logs_tab",
-  "clear_logs_after_days",
-  "autorization_tab",
-  "authorized_signatory"
+  "authorization_tab",
+  "authorized_signatory",
+  "print_format"
  ],
  "fields": [
   {
@@ -66,12 +65,14 @@
    "fieldname": "signature_mode",
    "fieldtype": "Select",
    "label": "Signature Mode",
-   "options": "\ndSign\neSign\neSign v3",
+   "options": "\nAadhar\ndSign\neSign\neSign v3",
    "reqd": 1
   },
   {
+   "default": "OTP",
    "fieldname": "authentication_mode",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Authentication Mode",
    "options": "OTP\nBiometric\nIris\nFace"
   },
@@ -116,6 +117,7 @@
    "description": "By default this value would be FALSE.\nPass it as TRUE if you want to save the\nresponse data with us.\n\nIn case of failure you can request us by calling\nour API's before 48 hours (If Storetodb=TRUE).\nRefer to Transaction Request API section, for\nmore info.\nRefer to Signed Data Request API section, for\nmore info.",
    "fieldname": "store_to_db",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Store to db"
   },
   {
@@ -123,6 +125,7 @@
    "description": "If the file size is more than 10mb, you can\ncompress and share the file",
    "fieldname": "is_compressed",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Is Compressed"
   },
   {
@@ -130,6 +133,7 @@
    "description": "By default this value will be FALSE.\n\nPass TRUE if you want to sign GSTR1 data and\nPass \"IsGSTN3B\" as FALSE.\nPass file value as Base 64 of (GSTR1 JSON\ndata)",
    "fieldname": "is_gstin",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Is GSTIN"
   },
   {
@@ -137,6 +141,7 @@
    "description": "By default this value will be FALSE.\n\nPass TRUE if you want to sign GSTR3B data\nand Pass \"IsGSTN\" as FALSE.\nPass file value as Base 64 of (Part A~Part B)",
    "fieldname": "is_gstn3b",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Is GSTN3B"
   },
   {
@@ -167,23 +172,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "90",
-   "description": "Logs will be deleted once they exceed the specified number of days.\n\nIf you don't want the logs to be cleared automatically, then set the value to 0.",
-   "fieldname": "clear_logs_after_days",
-   "fieldtype": "Int",
-   "label": "Clear Logs After (days)"
-  },
-  {
-   "fieldname": "logs_tab",
-   "fieldtype": "Tab Break",
-   "label": "Logs"
-  },
-  {
-   "fieldname": "autorization_tab",
-   "fieldtype": "Tab Break",
-   "label": "Autorization"
-  },
-  {
    "fieldname": "authorized_signatory",
    "fieldtype": "Table",
    "label": "Authorized Signatory",
@@ -193,12 +181,23 @@
    "fieldname": "session_key",
    "fieldtype": "Password",
    "label": "Session Key"
+  },
+  {
+   "fieldname": "authorization_tab",
+   "fieldtype": "Tab Break",
+   "label": "Authorization"
+  },
+  {
+   "fieldname": "print_format",
+   "fieldtype": "Table",
+   "label": "Print Format",
+   "options": "emSigner Print Format"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-23 16:34:01.559468",
+ "modified": "2025-03-12 16:58:33.656670",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",
