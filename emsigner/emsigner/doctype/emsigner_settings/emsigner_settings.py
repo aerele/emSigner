@@ -15,7 +15,6 @@ class emSignerSettings(Document):
 		new_doctype_names = {d.doctype_name for d in self.doctypes}
 		removed_doctypes = old_doctype_names - new_doctype_names
 		added_doctypes = new_doctype_names - old_doctype_names
-		# frappe.log_error("removed_doctypes", removed_doctypes)
 		for dict in removed_doctypes:
 			delete_custom_fields(dict, "emSigner")
 		for dict in added_doctypes:

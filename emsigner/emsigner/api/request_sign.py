@@ -25,13 +25,11 @@ def send_email_request(doctype, docname):
 				recipient_email=row.signatory_email,
 				reference_id=row.reference_id,
 			)
-			print(request_link)
 			send_email(
 				row.signatory_name, row.signatory_email, request_link, doc.modified_by, doctype, docname
 			)
 			row.signature_status = "Pending Review"
 	doc.save()
-	return
 
 
 def generate_reference_id():
@@ -270,10 +268,6 @@ def place_signature_page(doctype, child_doctype, docname, signatory_details):
 @frappe.whitelist(allow_guest=True)
 def update_coordinates_value(doctype, child_doctype, docname, coordinates, signatory_name):
 	try:
-		frappe.log_error(
-			"Coordinate Update",
-			f"doctype: {doctype}, docname: {docname}, coordinates: {coordinates}, signatory_name: {signatory_name}",
-		)
 		coords = coordinates.split(",")
 		if len(coords) != 4:
 			frappe.throw(_("Invalid coordinate format. Expected 4 values: x,y,width,height"))

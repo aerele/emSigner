@@ -205,4 +205,3 @@ def fetch_emsigner_authorized_signatory(doctype, docname):
 			doc.requested_letter_head = print_format.letter_head
 			break
 	doc.save()
-	return

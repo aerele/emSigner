@@ -74,7 +74,7 @@ def get_emsigner_parameters(**args):
 
 
 def set_signing_data(ref_number, signing_data):
-	frappe.cache().hset("signing_data_cache", ref_number, signing_data)
+	frappe.cache().set_value("signing_data_cache", ref_number, signing_data, expires_in_sec=600)
 
 
 @frappe.whitelist(allow_guest=True)
