@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-02-22 16:20:05.359336",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "permitted_doctype",
+  "signatory",
+  "signatory_name",
+  "signatory_email",
+  "column_break_ceab",
+  "select_page",
+  "sign_position",
+  "customize_coordinates",
+  "place_sign"
+ ],
+ "fields": [
+  {
+   "fieldname": "signatory",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Signatory",
+   "options": "User"
+  },
+  {
+   "fetch_from": "signatory.full_name",
+   "fetch_if_empty": 1,
+   "fieldname": "signatory_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Signatory Name",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "signatory.email",
+   "fetch_if_empty": 1,
+   "fieldname": "signatory_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Signatory Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "permitted_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Permitted Doctype",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "column_break_ceab",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sign_position",
+   "fieldtype": "Select",
+   "label": "Sign Position",
+   "options": "\nTop-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
+   "reqd": 1
+  },
+  {
+   "fieldname": "select_page",
+   "fieldtype": "Select",
+   "label": "Select Page",
+   "options": "\nALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY\nPAGE LEVEL",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.sign_position == \"Customize\"",
+   "fieldname": "customize_coordinates",
+   "fieldtype": "Data",
+   "label": "Customize Coordinates",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.sign_position == \"Customize\"",
+   "fieldname": "place_sign",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Place Sign"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-03-14 12:48:49.974950",
+ "modified_by": "Administrator",
+ "module": "emSigner",
+ "name": "emSigner Authorized Signatory",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

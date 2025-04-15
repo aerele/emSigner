@@ -1,25 +1,20 @@
 <template>
-    <div class="emSigner">
-        <div class="content">
-            Emsigner
-        </div>
-    </div>
+	<div class="emSigner">
+		<div class="content">Emsigner</div>
+	</div>
 </template>
 <script>
-
 export default {
-    data() {
-        return{
-            
-        };
-    },
+	data() {
+		return {};
+	},
 
-    watch: {
-    async $route() {
-      frappe.router.current_route = await frappe.router.parse();
-      console.log("async $route")
-      frappe.breadcrumbs.update();
-    },
-  },
-}
+	watch: {
+		async $route() {
+			frappe.router.current_route = await frappe.router.parse();
+			console.log("async $route");
+			frappe.breadcrumbs.update();
+		},
+	},
+};
 </script>

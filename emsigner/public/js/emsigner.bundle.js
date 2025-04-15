@@ -13,137 +13,138 @@ frappe.call({
 			let doctype_name = element.doctype_name;
 			frappe.ui.form.on(doctype_name, {
 				refresh: function (frm) {
-					frm.add_custom_button("Sign", function () {
-						let d = new frappe.ui.Dialog({
-							title: "Enter details",
-							fields: [
-								{
-									label: "Name",
-									fieldname: "name",
-									fieldtype: "Data",
-									default: frappe.session.user_fullname,
-								},
-								{
-									label: "Print Format",
-									fieldname: "print_format",
-									fieldtype: "Link",
-									options: "Print Format",
-									default: "Standard",
-								},
-								{
-									label: "Letter Head",
-									fieldname: "letter_head",
-									fieldtype: "Link",
-									options: "Letter Head",
-								},
-								{
-									label: "Select Page",
-									fieldname: "select_page",
-									fieldtype: "Select",
-									options: "\nALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY\nPAGE LEVEL",
-									default: "ALL",
-									reqd: 1,
-								},
-								{
-									label: "Page Number",
-									fieldname: "page_number",
-									fieldtype: "Data",
-									depends_on: 'eval:doc.select_page == "SPECIFY"',
-								},
-								{
-									label: "Page Level Coordinates",
-									fieldname: "page_level_coordinates",
-									fieldtype: "Data",
-									depends_on: 'eval:doc.select_page == "PAGE LEVEL"',
-								},
-								{
-									label: "Signature Position",
-									fieldname: "signature_position",
-									fieldtype: "Select",
-									options:
-										"Top-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
-									default: "Bottom-Right",
-									reqd: 1,
-								},
-								{
-									label: "Custom Co-ordinates",
-									fieldname: "customize_coordinates",
-									fieldtype: "Data",
-									depends_on: 'eval:doc.signature_position == "Customize"',
-								},
-								{
-									label: "Reason",
-									fieldname: "reason",
-									fieldtype: "Small Text",
-								},
-							],
-							size: "small",
-							primary_action_label: "Submit",
-							primary_action(values) {
+					frm.add_custom_button("Request Sign", function () {
+						frappe.call({
+							method: "emsigner.emsigner.api.request_sign.send_email_request",
+							args: {
+								docname: frm.doc.name,
+								doctype: frm.doc.doctype,
+							},
+							callback: (response) => {
+								frappe.msgprint("Signature requests has been sent successfully");
+							},
+						});
+					});
+					frm.add_custom_button("Fetch Sign info", function () {
+						frappe.confirm(
+							"This will clear the current Signatory Details. Are you sure you want to proceed?",
+							function () {
 								frappe.call({
-									method: "emsigner.emsigner.api.emsigner.get_emsigner_parameters",
+									method: "emsigner.emsigner.api.make_sign.fetch_emsigner_authorized_signatory",
 									args: {
-										doctype_name: doctype_name,
-										document_name: frm.doc.name,
-										name: values.name,
-										print_format: values.print_format,
-										letter_head: values.letter_head,
-										select_page: values.select_page,
-										page_number: values.page_number,
-										page_level_coordinates: values.page_level_coordinates,
-										signature_position: values.signature_position,
-										customize_coordinates: values.customize_coordinates,
-										reason: values.reason,
+										docname: frm.doc.name,
+										doctype: frm.doc.doctype,
 									},
 									callback: (response) => {
-										const iframeContent = response.message;
-										const iframeBlob = new Blob([iframeContent], {
-											type: "text/html",
-										});
-										const iframeURL = URL.createObjectURL(iframeBlob);
-										const htmlWrapper = `
-											<!DOCTYPE html>
-											<html lang="en">
-											<head>
-												<meta charset="UTF-8">
-												<title>emSign Portal</title>
-												<style>
-													body, html {
-														margin: 0;
-														padding: 0;
-														height: 100%;
-														overflow: hidden;
-													}
-													iframe {
-														border: none;
-														width: 100%;
-														height: 100%;
-													}
-												</style>
-											</head>
-											<body>
-												<iframe id="contentIframe" src="${iframeURL}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-											</body>
-											</html>
-										`;
-										const wrapperBlob = new Blob([htmlWrapper], {
-											type: "text/html",
-										});
-										const wrapperURL = URL.createObjectURL(wrapperBlob);
-										const features =
-											"width=800,height=600,noopener,noreferrer";
-										const newWindow = window.open(
-											wrapperURL,
-											"_blank",
-											features
+										frappe.msgprint(
+											"Default Signatory details fetched successfully"
 										);
 									},
 								});
-								d.hide();
-							},
-						});
-						d.show();
+							}
+						);
 					});
+				},
+			});
+			frappe.ui.form.on("emSigner Signatory Detail", {
+				place_sign: function (frm, cdt, cdn) {
+					var row = locals[cdt][cdn];
+					frappe.msgprint({
+						title: __("Set Coordinates"),
+						message: `
+						<p>Download the Signed/New PDF and follow the instruction in the video to find the 'Coordinates' and set it</p>
+						<iframe width="100%" height="315"
+							src="https://www.youtube.com/embed/34xhjJEnaRA?autoplay=1&mute=1"
+							frameborder="0" allowfullscreen>
+						</iframe>
+						<br><br>
+						<button class="btn btn-primary" id="third-action-btn">Open Site</button>
+						`,
+						primary_action: {
+							label: "Set the Coordinates",
+							action() {
+								frappe.hide_msgprint();
+								frappe.prompt("Coordinates", ({ value }) => {
+									frappe.model.set_value(
+										row.doctype,
+										row.name,
+										"customize_coordinates",
+										value
+									);
+									frm.save();
+								});
+							},
+						},
+						secondary_action: {
+							label: "Download PDF",
+							action() {
+								frappe.call({
+									method: "emsigner.emsigner.api.make_sign.download_document_pdf",
+									args: {
+										doctype: cur_frm.doc.doctype,
+										docname: cur_frm.doc.name,
+										signatory_details: row,
+									},
+									callback(r) {
+										if (r.message) {
+											// Decode Base64 string to binary
+											let byteCharacters = atob(r.message);
+											let byteNumbers = new Array(byteCharacters.length);
+											for (let i = 0; i < byteCharacters.length; i++) {
+												byteNumbers[i] = byteCharacters.charCodeAt(i);
+											}
+											let byteArray = new Uint8Array(byteNumbers);
+											let blob = new Blob([byteArray], {
+												type: "application/pdf",
+											});
+
+											// Create a download link
+											let link = document.createElement("a");
+											link.href = URL.createObjectURL(blob);
+											link.download = `${cur_frm.doc.name}.pdf`;
+											document.body.appendChild(link);
+											link.click();
+											document.body.removeChild(link);
+										} else {
+											frappe.msgprint(__("Failed to generate PDF"));
+										}
+									},
+								});
+							},
+						},
+					});
+
+					// Add event listener for third button
+					setTimeout(() => {
+						document
+							.getElementById("third-action-btn")
+							.addEventListener("click", function () {
+								window.open("https://coordinates-int.emsigner.com/");
+							});
+					}, 500);
+					// if(row.sign_position == "Customize"){
+					// 	frappe.call({
+					// 		method: "emsigner.emsigner.api.request_sign.place_signature_page",
+					// 		args: {
+					// 			doctype: frm.doc.doctype,
+					// 			child_doctype: row.doctype,
+					// 			docname: frm.doc.name,
+					// 			signatory_details: JSON.stringify(row),
+					// 		},
+					// 		callback: (response) => {
+					// 			let newWindow = window.open("");
+					// 			if (newWindow) {
+					// 				newWindow.document.write(response.message);
+					// 				newWindow.document.close();
+					// 			} else {
+					// 				console.error("Popup blocked. Enable popups for this site.");
+					// 			}
+					// 		},
+					// 	});
+					// }
+					// else{
+					// frappe.throw("Sign Position should be 'Customize' to place the signature")
+					// }
 				},
 			});
 		});

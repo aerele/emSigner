@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-03-12 16:56:17.006973",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "permitted_doctype",
+  "print_format",
+  "letter_head"
+ ],
+ "fields": [
+  {
+   "fieldname": "print_format",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Print Format",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "letter_head",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Letter Head",
+   "options": "Letter Head"
+  },
+  {
+   "fieldname": "permitted_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Permitted Doctype",
+   "options": "DocType"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-03-13 12:01:53.824161",
+ "modified_by": "Administrator",
+ "module": "emSigner",
+ "name": "emSigner Print Format",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
