@@ -11,6 +11,7 @@
   "column_break_xwjs",
   "public_certificate",
   "session_key",
+  "gateway_url",
   "settings_tab",
   "document_type",
   "doctypes",
@@ -183,6 +184,14 @@
    "label": "Session Key"
   },
   {
+   "default": "https://signergateway.emsigner.com/eMsecure/V3_0/Index",
+   "description": "The eMudhra signer gateway URL. Use the demo URL for testing: https://demosignergateway.emsigner.com/eMsecure/V3_0/Index",
+   "fieldname": "gateway_url",
+   "fieldtype": "Data",
+   "label": "Gateway URL",
+   "reqd": 1
+  },
+  {
    "fieldname": "authorization_tab",
    "fieldtype": "Tab Break",
    "label": "Authorization"
@@ -197,7 +206,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-03-12 16:58:33.656670",
+ "modified": "2026-03-16 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",

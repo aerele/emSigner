@@ -17,7 +17,8 @@
   "customize_coordinates",
   "select_page",
   "page_number",
-  "page_level_coordinates"
+  "page_level_coordinates",
+  "place_sign"
  ],
  "fields": [
   {
@@ -79,22 +80,29 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval: doc.select_page == 'SPECIFY'",
    "fieldname": "page_number",
    "fieldtype": "Data",
    "label": "Page Number",
-   "read_only": 1
+   "mandatory_depends_on": "eval: doc.select_page == 'SPECIFY'"
   },
   {
+   "depends_on": "eval: doc.select_page == 'PAGE LEVEL'",
    "fieldname": "page_level_coordinates",
    "fieldtype": "Data",
-   "label": "Page Level Coordinates",
-   "read_only": 1
+   "label": "Page Level Coordinates"
   },
   {
    "fieldname": "customize_coordinates",
    "fieldtype": "Data",
    "label": "Customize Coordinates",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.sign_position == 'Customize'",
+   "fieldname": "place_sign",
+   "fieldtype": "Button",
+   "label": "Place Sign"
   },
   {
    "columns": 2,
@@ -109,7 +117,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-14 11:49:18.244742",
+ "modified": "2026-03-16 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Signatory Detail",
