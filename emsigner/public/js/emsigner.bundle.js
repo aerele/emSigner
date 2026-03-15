@@ -43,6 +43,17 @@
 	function add_emsigner_buttons(frm) {
 		if (frm.is_new()) return;
 
+		const signatories = frm.doc.signatory_detail || [];
+		const has_signatories = signatories.length > 0;
+		const completed = signatories.filter((s) => s.signature_status === "Completed");
+		const pending = signatories.filter((s) => s.signature_status !== "Completed");
+		const any_sent = signatories.some((s) => s.signature_status !== "Not Initiated");
+
+		// Show signing progress banner
+		if (has_signatories) {
+			show_signing_banner(frm, signatories, completed, pending);
+		}
+
 		frm.add_custom_button(
 			__("Request Sign"),
 			() => {
@@ -50,6 +61,16 @@
 			},
 			__("emSigner")
 		);
+
+		if (has_signatories && any_sent) {
+			frm.add_custom_button(
+				__("Signing Status"),
+				() => {
+					show_signing_status_dialog(frm);
+				},
+				__("emSigner")
+			);
+		}
 
 		frm.add_custom_button(
 			__("Fetch Signatory Info"),
@@ -75,6 +96,129 @@
 			},
 			__("emSigner")
 		);
+	}
+
+	function show_signing_banner(frm, signatories, completed, pending) {
+		// Remove any previous emsigner banner
+		frm.$wrapper.find(".emsigner-signing-banner").remove();
+
+		let msg = "";
+		let color = "";
+
+		if (completed.length === signatories.length) {
+			msg = __("All {0} signatory(ies) have signed. Submit this document to confirm.", [signatories.length]);
+			color = "green";
+		} else if (completed.length > 0) {
+			msg = __("{0} of {1} signed. Waiting for: {2}", [
+				completed.length,
+				signatories.length,
+				pending.map((s) => s.signatory_name).join(", "),
+			]);
+			color = "orange";
+		} else if (signatories.some((s) => s.signature_status === "Pending Review" || s.signature_status === "Review In-Progress")) {
+			msg = __("Signing in progress. {0} signatory(ies) pending.", [pending.length]);
+			color = "blue";
+		}
+
+		if (msg) {
+			const $banner = $(`<div class="emsigner-signing-banner" style="
+				padding: 10px 15px; margin-bottom: 10px; border-radius: 6px; font-size: 13px;
+				background: var(--${color}-50, var(--subtle-fg));
+				border: 1px solid var(--${color}-200, var(--border-color));
+				color: var(--${color}-600, var(--text-color));
+			">${msg}</div>`);
+			frm.layout.wrapper.find(".form-message").after($banner);
+		}
+	}
+
+	function show_signing_status_dialog(frm) {
+		const signatories = frm.doc.signatory_detail || [];
+
+		const STATUS_ICONS = {
+			"Not Initiated": { icon: "&#9711;", color: "var(--gray-500)" },
+			"Pending Review": { icon: "&#9993;", color: "var(--orange-500)" },
+			"Review In-Progress": { icon: "&#9998;", color: "var(--blue-500)" },
+			Completed: { icon: "&#10004;", color: "var(--green-500)" },
+			Rejected: { icon: "&#10006;", color: "var(--red-500)" },
+			Failure: { icon: "&#10006;", color: "var(--red-500)" },
+		};
+
+		const rows_html = signatories.map((s) => {
+			const status = s.signature_status || "Not Initiated";
+			const si = STATUS_ICONS[status] || STATUS_ICONS["Not Initiated"];
+			const name = frappe.utils.escape_html(s.signatory_name);
+			const email = frappe.utils.escape_html(s.signatory_email);
+			const can_resend = status === "Pending Review" || status === "Failure" || status === "Not Initiated";
+
+			return `<div class="sig-status-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-color);">
+				<span style="font-size: 20px; color: ${si.color}; width: 28px; text-align: center;">${si.icon}</span>
+				<div style="flex: 1; min-width: 0;">
+					<div style="font-weight: 600; font-size: 14px;">${name}</div>
+					<div style="font-size: 12px; color: var(--text-muted);">${email}</div>
+				</div>
+				<span class="indicator-pill ${STATUS_COLORS[status] || "grey"}" style="font-size: 12px;">${frappe.utils.escape_html(status)}</span>
+				${can_resend ? `<button class="btn btn-xs btn-default resend-btn" data-email="${email}" data-name="${frappe.utils.escape_html(s.name)}">${__("Resend")}</button>` : ""}
+			</div>`;
+		}).join("");
+
+		const completed_count = signatories.filter((s) => s.signature_status === "Completed").length;
+		const total = signatories.length;
+		const progress_pct = total ? Math.round((completed_count / total) * 100) : 0;
+
+		const dialog = new frappe.ui.Dialog({
+			title: __("Signing Status — {0}", [frm.doc.name]),
+			size: "large",
+		});
+
+		dialog.$body.html(`
+			<div style="padding: 0;">
+				<div style="padding: 16px; background: var(--subtle-fg); border-bottom: 1px solid var(--border-color);">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+						<span style="font-size: 13px; font-weight: 600;">${__("Progress")}</span>
+						<span style="font-size: 13px; color: var(--text-muted);">${completed_count} / ${total}</span>
+					</div>
+					<div style="height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
+						<div style="height: 100%; width: ${progress_pct}%; background: var(--green-500); border-radius: 4px; transition: width 0.3s;"></div>
+					</div>
+				</div>
+				<div class="sig-status-list">
+					${rows_html}
+				</div>
+				${completed_count === total ? `
+				<div style="padding: 16px; text-align: center; background: var(--green-50, #E8F5E9);">
+					<span style="font-size: 14px; font-weight: 600; color: var(--green-600);">
+						${__("All signatures received. Submit this document to confirm.")}
+					</span>
+				</div>` : ""}
+			</div>
+		`);
+
+		// Resend handler
+		dialog.$body.find(".resend-btn").on("click", function () {
+			const $btn = $(this);
+			const child_name = $btn.data("name");
+			$btn.prop("disabled", true).text(__("Sending..."));
+
+			frappe.call({
+				method: "emsigner.emsigner.api.request_sign.resend_reminder",
+				args: {
+					doctype: frm.doc.doctype,
+					docname: frm.doc.name,
+					child_name: child_name,
+				},
+				callback(r) {
+					const msg = (r.message && r.message.message) || __("Reminder sent");
+					frappe.show_alert({ message: msg, indicator: "green" }, 3);
+					$btn.text(__("Sent"));
+				},
+				error() {
+					$btn.prop("disabled", false).text(__("Resend"));
+					frappe.show_alert({ message: __("Failed to send"), indicator: "red" }, 3);
+				},
+			});
+		});
+
+		dialog.show();
 	}
 
 	// Pre-sign Preview & Send
