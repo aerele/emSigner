@@ -34,7 +34,7 @@ def decrypt_payload(request_payload):
 
 	save_signed_pdf(reference_no, decrypted_data)
 
-	frappe.local.response.update({"type": "redirect", "location": "/emsigner_success_page"})
+	frappe.local.response.update({"type": "redirect", "location": f"/emsigner_success_page?ref={reference_no}"})
 
 
 def parse_request_payload(request_payload):
@@ -61,9 +61,15 @@ def is_valid_pdf(data):
 def save_signed_pdf(reference_no, content):
 	signatory_log = get_signatory_details(reference_no)
 	if not signatory_log:
-		frappe.throw(_(f"No Signatory Log entry found for reference ID: {reference_no}"))
+		frappe.throw(_("No signatory entry found for reference ID: {0}").format(reference_no))
 
 	validate_sign_expiry(signatory_log)
+
+	# Verify parent document still exists
+	if not frappe.db.exists(signatory_log["parenttype"], signatory_log["parent"]):
+		frappe.throw(_("The parent document {0} {1} no longer exists.").format(
+			signatory_log["parenttype"], signatory_log["parent"]
+		))
 
 	doc = frappe.get_doc(
 		{
@@ -72,7 +78,7 @@ def save_signed_pdf(reference_no, content):
 			"attached_to_doctype": signatory_log["parenttype"],
 			"attached_to_name": signatory_log["parent"],
 			"file_type": "PDF",
-			"is_private": 0,
+			"is_private": 1,
 			"attached_to_field": "signed_document",
 			"file_name": f"{reference_no}_signed_file.pdf",
 			"folder": "Home/Attachments",
@@ -82,8 +88,6 @@ def save_signed_pdf(reference_no, content):
 
 	update_signatory_details(signatory_log["name"], {"signature_status": "Completed"})
 	update_file_url(signatory_log["parenttype"], signatory_log["parent"], doc.file_url)
-
-	frappe.db.commit()
 
 
 def get_session_key():
@@ -100,12 +104,12 @@ def get_signatory_details(reference_no):
 
 
 def validate_sign_expiry(signatory):
-	if signatory.get("last_tried"):
-		time_difference = datetime.now() - get_datetime(signatory["last_tried"])
-		if time_difference > timedelta(minutes=10):
-			frappe.throw(_("There is an ongoing review. Kindly try after a few minutes."))
-	else:
-		frappe.throw(_("Something went wrong."))
+	if not signatory.get("last_tried"):
+		frappe.throw(_("No signing session found for this reference."))
+
+	time_difference = datetime.now() - get_datetime(signatory["last_tried"])
+	if time_difference > timedelta(minutes=10):
+		frappe.throw(_("The signing session has expired. Please initiate a new signing request."))
 
 
 def update_signatory_details(name, values):
