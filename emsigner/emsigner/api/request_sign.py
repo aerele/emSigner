@@ -53,10 +53,11 @@ def generate_request_link(doctype, docname, recipient_email, reference_id):
 	return f"{base_url}?doctype={quoted(doctype)}&docname={quoted(docname)}&ref_id={reference_id}&token={token}"
 
 
-def send_email(signatory_name, recipient_email, request_link, modified_by, doctype, docname):
+def send_email(signatory_name, recipient_email, request_link, modified_by, doctype, docname, is_reminder=False):
+	subject = _("Reminder: Request for Signature") if is_reminder else _("Request for Signature")
 	frappe.sendmail(
 		recipients=[recipient_email],
-		subject=_("Request for Signature"),
+		subject=subject,
 		message=get_email_content(signatory_name, request_link, modified_by),
 		reference_doctype=doctype,
 		reference_name=docname,
@@ -86,6 +87,44 @@ def get_email_content(signatory_name, link, author):
 	</body>
 	</html>
 	"""
+
+
+@frappe.whitelist()
+def resend_reminder(doctype, docname, child_name):
+	"""Resend signing email to a specific signatory regardless of current status."""
+	frappe.has_permission(doctype, "write", docname, throw=True)
+	doc = frappe.get_doc(doctype, docname)
+
+	row = None
+	for r in doc.signatory_detail:
+		if r.name == child_name:
+			row = r
+			break
+
+	if not row:
+		frappe.throw(_("Signatory not found"))
+
+	if row.signature_status == "Completed":
+		frappe.throw(_("{0} has already signed this document.").format(row.signatory_name))
+
+	# Generate a fresh reference and link
+	row.reference_id = generate_reference_id()
+	request_link = generate_request_link(
+		doctype=doctype,
+		docname=docname,
+		recipient_email=row.signatory_email,
+		reference_id=row.reference_id,
+	)
+	send_email(
+		row.signatory_name, row.signatory_email, request_link, doc.modified_by, doctype, docname,
+		is_reminder=True,
+	)
+
+	if row.signature_status == "Not Initiated":
+		row.signature_status = "Pending Review"
+
+	doc.save()
+	return {"message": _("Reminder sent to {0}").format(row.signatory_name)}
 
 
 @frappe.whitelist()
