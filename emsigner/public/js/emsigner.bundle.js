@@ -290,13 +290,14 @@
 			`;
 		}
 
-		// Track updates per signatory index: { coords, select_page, page_number }
+		// Track updates per signatory index: { coords, select_page, page_number, sign_position }
 		const sig_updates = {};
 		pending.forEach((s, i) => {
 			sig_updates[i] = {
 				coords: s.customize_coordinates || "",
 				select_page: s.select_page || "",
 				page_number: s.page_number || "",
+				sign_position: s.sign_position || "",
 			};
 		});
 
@@ -328,35 +329,35 @@
 					</div>
 					<span style="font-size: 11px; color: var(--text-muted);">&#8594;</span>
 				</div>
-				${is_custom ? `
-				<div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;" onclick="event.stopPropagation();">
+					<div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;" onclick="event.stopPropagation();">
 					<select class="sig-page-select form-control input-xs" data-index="${i}" style="font-size: 11px; height: 26px; padding: 2px 6px;">
 						${build_page_options(s.select_page || "ALL")}
 					</select>
 					<input type="number" class="sig-page-number form-control input-xs" data-index="${i}" placeholder="${__("Page #")}"
 						value="${s.page_number || ""}" min="1" style="font-size: 11px; height: 26px; padding: 2px 6px; ${specify_display}" />
-				</div>` : ""}
+				</div>
 			</div>`;
 		}).join("");
 
-		// Build overlay divs for Customize signatories (draggable)
+		// Build overlay divs for all signatories
 		const overlays = pending.map((s, i) => {
-			if (s.sign_position !== "Customize") return "";
 			const color = SIGNATORY_COLORS[i % SIGNATORY_COLORS.length];
 			const name = frappe.utils.escape_html(s.signatory_name);
-			const has_coords = !!s.customize_coordinates;
+			const is_custom = s.sign_position === "Customize";
+			const has_coords = is_custom && !!s.customize_coordinates;
 			return `<div class="sig-overlay" data-sig-index="${i}"
+				data-sign-position="${frappe.utils.escape_html(s.sign_position || "")}"
 				data-coords="${frappe.utils.escape_html(s.customize_coordinates || "")}"
 				data-select-page="${frappe.utils.escape_html(s.select_page || "ALL")}"
 				data-page-number="${frappe.utils.escape_html(s.page_number || "")}"
 				style="
 				position: absolute; padding: 6px 12px;
 				background: ${color.bg}; border: 2px dashed ${color.border};
-				border-radius: 4px; cursor: grab;
+				border-radius: 4px; cursor: ${is_custom ? "grab" : "default"};
 				font-size: 11px; font-weight: 600; color: ${color.text};
 				z-index: 10; display: none;
 				white-space: nowrap; user-select: none;
-				${!has_coords ? "left: 20px; top: 20px;" : ""}
+				${is_custom && !has_coords ? "left: 20px; top: 20px;" : ""}
 			">${name}</div>`;
 		}).join("");
 
@@ -380,8 +381,11 @@
 		dialog.$body.html(`
 			<div class="pre-sign-container" style="display: flex; gap: 16px; padding: 4px 0; align-items: flex-start;">
 				<div class="sig-sidebar" style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
-					<div style="font-weight: 600; font-size: 12px; color: var(--heading-color); padding: 0 4px; text-transform: uppercase; letter-spacing: 0.5px;">
-						${__("Signatories")}
+					<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px;">
+						<div style="font-weight: 600; font-size: 12px; color: var(--heading-color); text-transform: uppercase; letter-spacing: 0.5px;">
+							${__("Signatories")}
+						</div>
+						<button class="btn btn-xs btn-default add-signatory-btn" title="${__("Add External Signatory")}">+ ${__("Add")}</button>
 					</div>
 					<div class="sig-cards-list" style="display: flex; flex-direction: column; gap: 4px;">
 						${signatory_cards}
@@ -428,15 +432,21 @@
 		let dragOffsetY = 0;
 
 		load_pdfjs().then(() => {
-			const pdfData = atob(pdf_base64);
-			pdfjsLib.getDocument({ data: pdfData }).promise.then((pdf) => {
-				pdf_doc = pdf;
-				total_pages = pdf.numPages;
-				$pageInfo.text(`Page ${current_page} / ${total_pages}`);
-				$prevBtn.prop("disabled", current_page <= 1);
-				$nextBtn.prop("disabled", current_page >= total_pages);
-				render_preview_page(current_page);
-			});
+			try {
+				const pdfData = atob(pdf_base64);
+				pdfjsLib.getDocument({ data: pdfData }).promise.then((pdf) => {
+					pdf_doc = pdf;
+					total_pages = pdf.numPages;
+					$pageInfo.text(`Page ${current_page} / ${total_pages}`);
+					$prevBtn.prop("disabled", current_page <= 1);
+					$nextBtn.prop("disabled", current_page >= total_pages);
+					render_preview_page(current_page);
+				}).catch(() => {
+					frappe.show_alert({ message: __("Failed to load PDF preview"), indicator: "red" }, 5);
+				});
+			} catch (e) {
+				frappe.show_alert({ message: __("Invalid PDF data"), indicator: "red" }, 5);
+			}
 		});
 
 		$prevBtn.on("click", () => {
@@ -509,7 +519,7 @@
 			}
 		}
 
-		// Drag: mousedown on overlay
+		// Drag: mousedown on overlay — dragging a preset position converts it to Customize
 		$wrapper.on("mousedown", ".sig-overlay", function (e) {
 			const sigIdx = parseInt($(this).data("sig-index"));
 			select_signatory(sigIdx);
@@ -544,6 +554,14 @@
 			sig_updates[sigIdx].coords = coords;
 			drag$el.data("coords", coords);
 
+			// Convert preset position to Customize on drag
+			if (drag$el.data("sign-position") !== "Customize") {
+				drag$el.data("sign-position", "Customize");
+				drag$el.css("cursor", "grabbing");
+				sig_updates[sigIdx].sign_position = "Customize";
+				pending[sigIdx].sign_position = "Customize";
+			}
+
 			$container.find(`.sig-card[data-index="${sigIdx}"] .sig-card-detail`).text(
 				__("Custom position") + " (" + __("moved") + ")"
 			);
@@ -560,6 +578,8 @@
 		dialog.onhide = () => {
 			$(document).off("mousemove.pre_sign");
 			$(document).off("mouseup.pre_sign");
+			isDragging = false;
+			drag$el = null;
 		};
 
 		function get_target_page_for_index(idx) {
@@ -602,7 +622,24 @@
 			}
 		}
 
+		function get_preset_position(position, width, height) {
+			const margin = 10;
+			const positions = {
+				"Top-Left":      { x: margin,                  y: margin },
+				"Top-Center":    { x: width * 0.35,            y: margin },
+				"Top-Right":     { x: width * 0.7,             y: margin },
+				"Middle-Left":   { x: margin,                  y: height * 0.45 },
+				"Middle-Center": { x: width * 0.35,            y: height * 0.45 },
+				"Middle-Right":  { x: width * 0.7,             y: height * 0.45 },
+				"Bottom-Left":   { x: margin,                  y: height * 0.88 },
+				"Bottom-Center": { x: width * 0.35,            y: height * 0.88 },
+				"Bottom-Right":  { x: width * 0.7,             y: height * 0.88 },
+			};
+			return positions[position] || { x: margin, y: margin };
+		}
+
 		function render_preview_page(pageNum) {
+			if (!pdf_doc) return;
 			pdf_doc.getPage(pageNum).then((page) => {
 				const viewport = page.getViewport({ scale: 1.0 });
 				const maxWidth = 700;
@@ -623,24 +660,38 @@
 							$el.css("display", "none");
 							return;
 						}
-						const coordsStr = $el.data("coords");
-						if (!coordsStr) {
-							// No coordinates yet — show at default position
-							$el.css({ display: "flex", "align-items": "center" });
-							return;
+
+						const signPosition = $el.data("sign-position");
+						const is_custom = signPosition === "Customize";
+
+						if (is_custom) {
+							const coordsStr = $el.data("coords");
+							if (!coordsStr) {
+								$el.css({ display: "flex", "align-items": "center" });
+								return;
+							}
+							const parts = String(coordsStr).split(",").map(Number);
+							if (parts.length !== 4 || parts.some(isNaN)) return;
+							const [gx, gy, gw, gh] = parts;
+							$el.css({
+								left: gx * displayScale,
+								top: pdf_height - gy * displayScale,
+								width: gw * displayScale,
+								height: gh * displayScale,
+								display: "flex",
+								"align-items": "center",
+								"justify-content": "center",
+							});
+						} else {
+							// Preset position — place at approximate location
+							const pos = get_preset_position(signPosition, pdf_width, pdf_height);
+							$el.css({
+								left: pos.x,
+								top: pos.y,
+								display: "flex",
+								"align-items": "center",
+							});
 						}
-						const parts = String(coordsStr).split(",").map(Number);
-						if (parts.length !== 4 || parts.some(isNaN)) return;
-						const [gx, gy, gw, gh] = parts;
-						$el.css({
-							left: gx * displayScale,
-							top: pdf_height - gy * displayScale,
-							width: gw * displayScale,
-							height: gh * displayScale,
-							display: "flex",
-							"align-items": "center",
-							"justify-content": "center",
-						});
 					});
 					update_overlay_styles();
 				});
@@ -651,6 +702,81 @@
 			});
 		}
 
+		// Add External Signatory button handler
+		dialog.$body.find(".add-signatory-btn").on("click", () => {
+			frappe.prompt(
+				[
+					{
+						label: __("Signatory Name"),
+						fieldname: "signatory_name",
+						fieldtype: "Data",
+						reqd: 1,
+					},
+					{
+						label: __("Signatory Email"),
+						fieldname: "signatory_email",
+						fieldtype: "Data",
+						options: "Email",
+						reqd: 1,
+					},
+					{
+						fieldtype: "Column Break",
+					},
+					{
+						label: __("Sign Position"),
+						fieldname: "sign_position",
+						fieldtype: "Select",
+						options: "Top-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
+						reqd: 1,
+						default: "Bottom-Left",
+					},
+					{
+						label: __("Select Page"),
+						fieldname: "select_page",
+						fieldtype: "Select",
+						options: "ALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY",
+						reqd: 1,
+						default: "ALL",
+					},
+					{
+						label: __("Page Number"),
+						fieldname: "page_number",
+						fieldtype: "Int",
+						depends_on: "eval: doc.select_page == 'SPECIFY'",
+						mandatory_depends_on: "eval: doc.select_page == 'SPECIFY'",
+					},
+				],
+				(values) => {
+					frappe.call({
+						method: "emsigner.emsigner.api.request_sign.add_external_signatory",
+						args: {
+							doctype: frm.doc.doctype,
+							docname: frm.doc.name,
+							signatory_name: values.signatory_name,
+							signatory_email: values.signatory_email,
+							sign_position: values.sign_position,
+							select_page: values.select_page,
+							page_number: values.page_number || "",
+						},
+						freeze: true,
+						freeze_message: __("Adding signatory..."),
+						callback() {
+							frappe.show_alert(
+								{ message: __("Signatory added. Refreshing preview..."), indicator: "green" },
+								3
+							);
+							dialog.hide();
+							frm.reload_doc().then(() => {
+								validate_and_send_sign_request(frm);
+							});
+						},
+					});
+				},
+				__("Add External Signatory"),
+				__("Add")
+			);
+		});
+
 		dialog.show();
 	}
 
@@ -658,18 +784,24 @@
 		const updates = [];
 		for (const [idx, u] of Object.entries(sig_updates)) {
 			const s = pending[parseInt(idx)];
-			if (!s || !s.child_name || s.sign_position !== "Customize") continue;
+			if (!s || !s.child_name) continue;
+
+			// Include if position was converted to Customize or if coords/page changed
+			const position_converted = u.sign_position === "Customize" && s.sign_position !== "Customize";
+			const is_customize = u.sign_position === "Customize" || s.sign_position === "Customize";
+			if (!is_customize) continue;
 
 			const coords_changed = u.coords && u.coords !== s.customize_coordinates;
 			const page_changed = u.select_page !== (s.select_page || "");
 			const pagenum_changed = String(u.page_number || "") !== String(s.page_number || "");
 
-			if (coords_changed || page_changed || pagenum_changed) {
+			if (position_converted || coords_changed || page_changed || pagenum_changed) {
 				updates.push({
 					child_name: s.child_name,
 					coordinates: u.coords || s.customize_coordinates,
 					select_page: u.select_page || s.select_page,
 					page_number: u.page_number || "",
+					sign_position: u.sign_position || s.sign_position,
 				});
 			}
 		}
@@ -679,28 +811,27 @@
 			return;
 		}
 
-		let saved = 0;
-		updates.forEach((u) => {
-			frappe.call({
-				method: "emsigner.emsigner.api.request_sign.update_coordinates_value",
-				args: {
-					child_doctype: "emSigner Signatory Detail",
-					child_name: u.child_name,
-					coordinates: u.coordinates,
-					select_page: u.select_page,
-					page_number: u.page_number,
-				},
-				async: false,
-			});
-			saved++;
-		});
+		const promises = updates.map((u) =>
+			frappe.xcall("emsigner.emsigner.api.request_sign.update_coordinates_value", {
+				child_doctype: "emSigner Signatory Detail",
+				child_name: u.child_name,
+				coordinates: u.coordinates,
+				select_page: u.select_page,
+				page_number: u.page_number,
+				sign_position: u.sign_position,
+			})
+		);
 
-		if (saved) {
+		Promise.all(promises).then(() => {
 			frappe.show_alert(
-				{ message: __("{0} signature position(s) updated", [saved]), indicator: "blue" }, 3
+				{ message: __("{0} signature position(s) updated", [updates.length]), indicator: "blue" }, 3
 			);
-		}
-		callback();
+			callback();
+		}).catch(() => {
+			frappe.show_alert(
+				{ message: __("Failed to save some position updates"), indicator: "red" }, 5
+			);
+		});
 	}
 
 	function send_sign_request(frm) {
@@ -1044,7 +1175,7 @@
 		$(document).on("mouseup.sig_placement", () => {
 			if (isDragging) {
 				isDragging = false;
-				$sigBox.css("cursor", "grab");
+				$sigBo ux.css("cursor", "grab");
 			}
 		});
 

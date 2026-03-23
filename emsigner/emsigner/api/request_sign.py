@@ -5,32 +5,36 @@ from datetime import datetime, timedelta
 import frappe
 import jwt
 from frappe import _
-from frappe.utils import get_url
+from frappe.utils import get_url, now
 from frappe.utils.data import quoted
 from markupsafe import escape
 
-from emsigner.emsigner.api.make_sign import _get_jwt_secret
+from emsigner.emsigner.api.make_sign import _get_jwt_secret, validate_signing_doctype
 
 
 @frappe.whitelist()
 def send_email_request(doctype, docname):
+	validate_signing_doctype(doctype)
 	frappe.has_permission(doctype, "write", docname, throw=True)
 	doc = frappe.get_doc(doctype, docname)
 
 	for row in doc.signatory_detail:
 		if row.signature_status in ("Not Initiated", "Failure"):
-			row.reference_id = generate_reference_id()
+			reference_id = generate_reference_id()
 			request_link = generate_request_link(
 				doctype=doctype,
 				docname=docname,
 				recipient_email=row.signatory_email,
-				reference_id=row.reference_id,
+				reference_id=reference_id,
 			)
 			send_email(
 				row.signatory_name, row.signatory_email, request_link, doc.modified_by, doctype, docname
 			)
-			row.signature_status = "Pending Review"
-	doc.save()
+			frappe.db.set_value(
+				"emSigner Signatory Detail",
+				row.name,
+				{"reference_id": reference_id, "signature_status": "Pending Review"},
+			)
 
 
 def generate_reference_id():
@@ -108,27 +112,76 @@ def resend_reminder(doctype, docname, child_name):
 		frappe.throw(_("{0} has already signed this document.").format(row.signatory_name))
 
 	# Generate a fresh reference and link
-	row.reference_id = generate_reference_id()
+	reference_id = generate_reference_id()
 	request_link = generate_request_link(
 		doctype=doctype,
 		docname=docname,
 		recipient_email=row.signatory_email,
-		reference_id=row.reference_id,
+		reference_id=reference_id,
 	)
 	send_email(
 		row.signatory_name, row.signatory_email, request_link, doc.modified_by, doctype, docname,
 		is_reminder=True,
 	)
 
+	update_values = {"reference_id": reference_id}
 	if row.signature_status == "Not Initiated":
-		row.signature_status = "Pending Review"
+		update_values["signature_status"] = "Pending Review"
 
-	doc.save()
+	frappe.db.set_value("emSigner Signatory Detail", child_name, update_values)
 	return {"message": _("Reminder sent to {0}").format(row.signatory_name)}
 
 
 @frappe.whitelist()
-def update_coordinates_value(child_doctype, child_name, coordinates, select_page=None, page_number=None):
+def add_external_signatory(doctype, docname, signatory_name, signatory_email, sign_position, select_page, page_number=None):
+	"""Add an external (non-system-user) signatory to a document."""
+	validate_signing_doctype(doctype)
+	frappe.has_permission(doctype, "write", docname, throw=True)
+
+	if not signatory_name or not signatory_email:
+		frappe.throw(_("Signatory name and email are required"))
+
+	frappe.utils.validate_email_address(signatory_email, throw=True)
+
+	VALID_SIGN_POSITIONS = (
+		"Top-Left", "Top-Center", "Top-Right",
+		"Middle-Left", "Middle-Center", "Middle-Right",
+		"Bottom-Left", "Bottom-Center", "Bottom-Right",
+		"Customize",
+	)
+	VALID_SELECT_PAGES = ("ALL", "FIRST", "EVEN", "LAST", "ODD", "SPECIFY", "PAGE LEVEL")
+
+	if sign_position not in VALID_SIGN_POSITIONS:
+		frappe.throw(_("Invalid sign position"))
+	if select_page not in VALID_SELECT_PAGES:
+		frappe.throw(_("Invalid select page value"))
+
+	# Get the next idx for the child table
+	max_idx = frappe.db.count("emSigner Signatory Detail", {"parent": docname, "parenttype": doctype})
+
+	child = frappe.get_doc({
+		"doctype": "emSigner Signatory Detail",
+		"parent": docname,
+		"parenttype": doctype,
+		"parentfield": "signatory_detail",
+		"idx": max_idx + 1,
+		"signatory_name": signatory_name,
+		"signatory_email": signatory_email,
+		"sign_position": sign_position,
+		"select_page": select_page,
+		"page_number": page_number or "",
+		"signature_status": "Not Initiated",
+	})
+	child.db_insert()
+
+	# Update parent's modified so client reload fetches fresh data
+	frappe.db.set_value(doctype, docname, "modified", now())
+
+	return {"message": _("Signatory {0} added successfully").format(signatory_name)}
+
+
+@frappe.whitelist()
+def update_coordinates_value(child_doctype, child_name, coordinates, select_page=None, page_number=None, sign_position=None):
 	if child_doctype not in ("emSigner Signatory Detail", "emSigner Authorized Signatory"):
 		frappe.throw(_("Invalid child doctype"))
 
@@ -152,8 +205,19 @@ def update_coordinates_value(child_doctype, child_name, coordinates, select_page
 			frappe.throw(_("Coordinates must be numeric values"))
 
 	VALID_SELECT_PAGES = ("ALL", "FIRST", "EVEN", "LAST", "ODD", "SPECIFY", "PAGE LEVEL")
+	VALID_SIGN_POSITIONS = (
+		"Top-Left", "Top-Center", "Top-Right",
+		"Middle-Left", "Middle-Center", "Middle-Right",
+		"Bottom-Left", "Bottom-Center", "Bottom-Right",
+		"Customize",
+	)
 
 	values = {"customize_coordinates": coordinates}
+
+	if sign_position is not None:
+		if sign_position not in VALID_SIGN_POSITIONS:
+			frappe.throw(_("Invalid sign_position value"))
+		values["sign_position"] = sign_position
 
 	if select_page is not None:
 		if select_page not in VALID_SELECT_PAGES:
