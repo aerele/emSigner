@@ -19,6 +19,15 @@ def _get_jwt_secret():
 	)
 
 
+def validate_signing_doctype(doctype):
+	"""Validate that the doctype is enabled for signing in emSigner Settings."""
+	enabled = frappe.get_all(
+		"emSigner Doctype", {"parent": "emSigner Settings"}, pluck="doctype_name"
+	)
+	if doctype not in enabled:
+		generate_failure_page("This document type is not enabled for signing.")
+
+
 @frappe.whitelist(allow_guest=True)
 def make_sign():
 	doctype = frappe.form_dict.get("doctype")
@@ -29,17 +38,36 @@ def make_sign():
 	if not (doctype and docname and ref_id and token):
 		generate_failure_page("Missing required parameters.")
 
-	# Verify the user is logged in
-	if frappe.session.user == "Guest":
-		generate_failure_page("Please log in to sign documents.")
+	validate_signing_doctype(doctype)
 
-	if not frappe.has_permission(doctype, "read"):
+	is_guest = frappe.session.user == "Guest"
+
+	# Verify JWT token first — before elevating permissions
+	signatory_details = _verify_signatory_as_guest(doctype, docname, ref_id, token) if is_guest \
+		else verify_signatory(doctype, docname, ref_id, token)
+
+	# For logged-in users, additionally verify document permission
+	if not is_guest and not frappe.has_permission(doctype, "read"):
 		generate_failure_page("You do not have permission to access this document.")
 
-	# Verify signatory and get details
-	signatory_details = verify_signatory(doctype, docname, ref_id, token)
+	# JWT verified — elevate permissions for guest to access document content
+	if is_guest:
+		frappe.flags.ignore_permissions = True
+	try:
+		initiate_signing_process(doctype, docname, ref_id, **signatory_details)
+	finally:
+		if is_guest:
+			frappe.flags.ignore_permissions = False
 
-	initiate_signing_process(doctype, docname, ref_id, **signatory_details)
+
+def _verify_signatory_as_guest(doctype, docname, ref_id, token):
+	"""Verify signatory for guest users with explicit ignore_permissions
+	only on the signatory lookup, not globally."""
+	frappe.flags.ignore_permissions = True
+	try:
+		return verify_signatory(doctype, docname, ref_id, token)
+	finally:
+		frappe.flags.ignore_permissions = False
 
 
 def initiate_signing_process(doctype, docname, ref_id, **signatory_details):
@@ -229,6 +257,7 @@ def preview_before_signing(doctype, docname):
 	"""Generate the actual document's PDF and return it along with all
 	pending signatory positions so the frontend can render a visual
 	verification overlay before sending signing requests."""
+	validate_signing_doctype(doctype)
 	frappe.has_permission(doctype, "read", docname, throw=True)
 	doc = frappe.get_doc(doctype, docname)
 	signatories = doc.signatory_detail or []
@@ -366,20 +395,25 @@ def _rects_overlap(ax, ay, aw, ah, bx, by, bw, bh):
 
 @frappe.whitelist()
 def fetch_emsigner_authorized_signatory(doctype, docname):
+	validate_signing_doctype(doctype)
 	frappe.has_permission(doctype, "write", docname, throw=True)
 	settings_doc = frappe.get_doc("emSigner Settings")
-	doc = frappe.get_doc(doctype, docname)
-	doc.signatory_detail = []
+
+	# Clear existing signatory detail rows
+	frappe.db.delete("emSigner Signatory Detail", {"parent": docname, "parenttype": doctype})
 
 	# Find matching print format config for defaults
 	pf_config = None
 	for pf in settings_doc.print_format:
 		if pf.permitted_doctype == doctype:
-			doc.requested_print_format = pf.print_format
-			doc.requested_letter_head = pf.letter_head
+			frappe.db.set_value(doctype, docname, {
+				"requested_print_format": pf.print_format,
+				"requested_letter_head": pf.letter_head,
+			})
 			pf_config = pf
 			break
 
+	idx = 0
 	for signatory in settings_doc.authorized_signatory:
 		if signatory.permitted_doctype == doctype:
 			sign_position = signatory.sign_position
@@ -395,16 +429,23 @@ def fetch_emsigner_authorized_signatory(doctype, docname):
 				if not customize_coordinates and pf_config.default_customize_coordinates:
 					customize_coordinates = pf_config.default_customize_coordinates
 
-			doc.append(
-				"signatory_detail",
-				{
-					"signatory": signatory.signatory,
-					"signatory_name": signatory.signatory_name,
-					"signatory_email": signatory.signatory_email,
-					"select_page": select_page,
-					"page_number": getattr(signatory, "page_number", None) or "",
-					"sign_position": sign_position,
-					"customize_coordinates": customize_coordinates,
-				},
-			)
-	doc.save()
+			idx += 1
+			child = frappe.get_doc({
+				"doctype": "emSigner Signatory Detail",
+				"parent": docname,
+				"parenttype": doctype,
+				"parentfield": "signatory_detail",
+				"idx": idx,
+				"signatory": signatory.signatory,
+				"signatory_name": signatory.signatory_name,
+				"signatory_email": signatory.signatory_email,
+				"select_page": select_page,
+				"page_number": getattr(signatory, "page_number", None) or "",
+				"sign_position": sign_position,
+				"customize_coordinates": customize_coordinates,
+				"signature_status": "Not Initiated",
+			})
+			child.db_insert()
+
+	# Update parent's modified so client reload fetches fresh data
+	frappe.db.set_value(doctype, docname, "modified", now())
