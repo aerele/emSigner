@@ -82,6 +82,8 @@ def get_emsigner_parameters(**args):
 		"encrypted_session_key": encrypted_session_key,
 		"encrypted_data": encrypted_data,
 		"encrypted_hash": encrypted_hash,
+		"gateway_url": settings_doc.gateway_url
+		or "https://signergateway.emsigner.com/eMsecure/V3_0/Index",
 	}
 	set_signing_data(ref_number, signing_data)
 
@@ -121,21 +123,10 @@ def set_signing_data(ref_number, signing_data):
 	frappe.cache().set_value(f"emsigner_signing_data:{ref_number}", signing_data, expires_in_sec=600)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_signing_data(ref_number):
-	# Verify the current user is associated with this signing request
-	signatory = frappe.db.get_value(
-		"emSigner Signatory Detail",
-		{"reference_id": ref_number},
-		["signatory_email"],
-		as_dict=True,
-	)
-	if not signatory:
-		frappe.throw(_("Invalid reference number"))
+	signing_data = frappe.cache().get_value(f"emsigner_signing_data:{ref_number}")
+	if not signing_data:
+		frappe.throw(_("Signing data not found or has expired. Please initiate a new signing request."))
 
-	if signatory.signatory_email != frappe.session.user and frappe.session.user != "Administrator":
-		user_email = frappe.db.get_value("User", frappe.session.user, "email")
-		if user_email != signatory.signatory_email:
-			frappe.throw(_("You are not authorized to access this signing data"))
-
-	return frappe.cache().get_value(f"emsigner_signing_data:{ref_number}")
+	return signing_data

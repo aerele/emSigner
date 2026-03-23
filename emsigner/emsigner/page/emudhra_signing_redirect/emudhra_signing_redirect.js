@@ -29,69 +29,69 @@ frappe.pages["emudhra_signing_redirect"].on_page_load = function (wrapper) {
 };
 
 function show_redirect_ui(wrapper, signingData) {
-	// Fetch gateway URL from settings
-	frappe.call({
-		method: "frappe.client.get_value",
-		args: {
-			doctype: "emSigner Settings",
-			fieldname: "gateway_url",
-			filters: { name: "emSigner Settings" },
-		},
-		async: false,
-		callback: function (r) {
-			const gateway_url = (r && r.message && r.message.gateway_url)
-				|| "https://signergateway.emsigner.com/eMsecure/V3_0/Index";
+	const gateway_url = signingData.gateway_url
+		|| "https://signergateway.emsigner.com/eMsecure/V3_0/Index";
 
-			// Build form safely using DOM API to avoid XSS
-			const container = document.createElement("div");
+	// Validate gateway URL points to a trusted emsigner domain
+	try {
+		const parsed = new URL(gateway_url);
+		if (!parsed.hostname.endsWith(".emsigner.com")) {
+			show_error(wrapper, __("Invalid gateway URL configured. Please contact your administrator."));
+			return;
+		}
+	} catch (e) {
+		show_error(wrapper, __("Invalid gateway URL configured. Please contact your administrator."));
+		return;
+	}
 
-			const form = document.createElement("form");
-			form.id = "signDocForm";
-			form.name = "signDocForm";
-			form.method = "post";
-			form.action = gateway_url;
+	// Build form safely using DOM API to avoid XSS
+	const container = document.createElement("div");
 
-			const input1 = document.createElement("input");
-			input1.type = "hidden";
-			input1.name = "Parameter1";
-			input1.value = signingData.encrypted_session_key || "";
-			form.appendChild(input1);
+	const form = document.createElement("form");
+	form.id = "signDocForm";
+	form.name = "signDocForm";
+	form.method = "post";
+	form.action = gateway_url;
 
-			const input2 = document.createElement("input");
-			input2.type = "hidden";
-			input2.name = "Parameter2";
-			input2.value = signingData.encrypted_data || "";
-			form.appendChild(input2);
+	const input1 = document.createElement("input");
+	input1.type = "hidden";
+	input1.name = "Parameter1";
+	input1.value = signingData.encrypted_session_key || "";
+	form.appendChild(input1);
 
-			const input3 = document.createElement("input");
-			input3.type = "hidden";
-			input3.name = "Parameter3";
-			input3.value = signingData.encrypted_hash || "";
-			form.appendChild(input3);
+	const input2 = document.createElement("input");
+	input2.type = "hidden";
+	input2.name = "Parameter2";
+	input2.value = signingData.encrypted_data || "";
+	form.appendChild(input2);
 
-			container.appendChild(form);
+	const input3 = document.createElement("input");
+	input3.type = "hidden";
+	input3.name = "Parameter3";
+	input3.value = signingData.encrypted_hash || "";
+	form.appendChild(input3);
 
-			const spinnerHtml = `
-				<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; gap: 16px;">
-					<div style="width: 48px; height: 48px; border: 3px solid var(--border-color); border-top-color: var(--primary); border-radius: 50%; animation: emsigner-spin 0.8s linear infinite;"></div>
-					<h3 style="margin: 0; color: var(--heading-color); font-weight: 600;">Redirecting to eMudhra Portal</h3>
-					<p style="margin: 0; color: var(--text-muted); font-size: 14px;">Please wait. Do not press Refresh or Back.</p>
-				</div>
-				<style>
-					@keyframes emsigner-spin {
-						to { transform: rotate(360deg); }
-					}
-				</style>
-			`;
+	container.appendChild(form);
 
-			$(wrapper).html(container);
-			$(wrapper).append(spinnerHtml);
+	const spinnerHtml = `
+		<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; gap: 16px;">
+			<div style="width: 48px; height: 48px; border: 3px solid var(--border-color); border-top-color: var(--primary); border-radius: 50%; animation: emsigner-spin 0.8s linear infinite;"></div>
+			<h3 style="margin: 0; color: var(--heading-color); font-weight: 600;">Redirecting to eMudhra Portal</h3>
+			<p style="margin: 0; color: var(--text-muted); font-size: 14px;">Please wait. Do not press Refresh or Back.</p>
+		</div>
+		<style>
+			@keyframes emsigner-spin {
+				to { transform: rotate(360deg); }
+			}
+		</style>
+	`;
 
-			setTimeout(() => {
-				form.submit();
-			}, 500);
-		},
-	});
+	$(wrapper).html(container);
+	$(wrapper).append(spinnerHtml);
+
+	setTimeout(() => {
+		form.submit();
+	}, 500);
 }
 
 function show_error(wrapper, message) {
