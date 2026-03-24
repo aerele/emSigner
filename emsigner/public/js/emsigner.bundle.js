@@ -1175,7 +1175,7 @@
 		$(document).on("mouseup.sig_placement", () => {
 			if (isDragging) {
 				isDragging = false;
-				$sigBo ux.css("cursor", "grab");
+				$sigBox.css("cursor", "grab");
 			}
 		});
 
