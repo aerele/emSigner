@@ -1,79 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Success</title>
-    <style>
-        /* Hide Frappe Header, Footer, and Sidebars */
-        .navbar, .footer, #page-desktop, #page-header {
-            display: none !important;
-        }
-        /* Body Styling */
-        body {
-            background-color: #f4f6f8;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        /* Success Page Container */
-        .container {
-            background: white;
-            padding: 40px 50px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 400px;
-        }
-        .checkmark {
-            font-size: 100px;
-            color: #4CAF50;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        p {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 25px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #4CAF50;
-            border: none;
-            border-radius: 50px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .btn:hover {
-            background-color: #45a049;
-        }
-    </style>
-    <script>
-        // Function to Close the Browser Tab
-        function closeTab() {
-            window.close();
-        }
-    </script>
-</head>
-<body>
+{% extends "templates/web.html" %}
 
-    <div class="container">
-        <div class="checkmark">&#10004;</div>
-        <h1>Success!</h1>
-        <p>The Document has been signed successfully. You can safely close this tab.</p>
-    </div>
-
-</body>
-</html>
+{% block page_content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; padding: 40px 20px; text-align: center;">
+	<div style="width: 80px; height: 80px; border-radius: 50%; background: #e8f5e9; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+		<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+			<polyline points="20 6 9 17 4 12"/>
+		</svg>
+	</div>
+	<h2 style="margin: 0 0 8px 0; color: #333; font-weight: 600;">Document Signed Successfully</h2>
+	<p style="margin: 0 0 32px 0; color: #666; font-size: 15px; max-width: 400px;">
+		The document has been digitally signed. You can navigate back to the document or close this tab.
+	</p>
+	{% if doctype and docname %}
+	<a href="/app/{{ doctype | e | replace(' ', '-') | lower }}/{{ docname | e }}"
+		class="btn btn-primary btn-md" style="border-radius: 6px; padding: 10px 28px; font-size: 14px;">
+		Go to Document
+	</a>
+	{% endif %}
+</div>
+{% endblock %}

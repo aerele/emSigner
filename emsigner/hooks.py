@@ -29,6 +29,8 @@ app_license = "mit"
 
 app_include_js = "emsigner.bundle.js"
 
+extend_bootinfo = "emsigner.emsigner.api.boot.get_emsigner_boot_info"
+
 # include js, css files in header of web template
 # web_include_css = "/assets/emsigner/css/emsigner.css"
 # web_include_js = "/assets/emsigner/js/emsigner.js"
@@ -152,21 +154,23 @@ app_include_js = "emsigner.bundle.js"
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-	# 	"all": [
-	# 		"emsigner.tasks.all"
-	# 	],
-	"daily": ["emsigner.emsigner.doctype.emsigner_log.emsigner_log.clear_emsigner_logs_after_days_rq_job"],
-	# 	"hourly": [
-	# 		"emsigner.tasks.hourly"
-	# 	],
-	# 	"weekly": [
-	# 		"emsigner.tasks.weekly"
-	# 	],
-	# 	"monthly": [
-	# 		"emsigner.tasks.monthly"
-	# 	],
-}
+# scheduler_events = {
+# 	"all": [
+# 		"emsigner.tasks.all"
+# 	],
+# 	"daily": [
+# 		"emsigner.tasks.daily"
+# 	],
+# 	"hourly": [
+# 		"emsigner.tasks.hourly"
+# 	],
+# 	"weekly": [
+# 		"emsigner.tasks.weekly"
+# 	],
+# 	"monthly": [
+# 		"emsigner.tasks.monthly"
+# 	],
+# }
 
 # Testing
 # -------

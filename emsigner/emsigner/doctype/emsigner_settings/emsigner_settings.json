@@ -11,6 +11,7 @@
   "column_break_xwjs",
   "public_certificate",
   "session_key",
+  "gateway_url",
   "settings_tab",
   "document_type",
   "doctypes",
@@ -42,7 +43,7 @@
    "reqd": 1
   },
   {
-   "description": "Usually, an Authtoken is a unique identifier of\nan application requesting access to our\nservice. emSigner would generate a unique\nAuthtoken for each customer to access\nemSigner signer gateway service. Pass valid\nunique Authtoken generated for your account.",
+   "description": "Unique token provided by emSigner for your account.",
    "fieldname": "authentication_token",
    "fieldtype": "Password",
    "in_list_view": 1,
@@ -51,7 +52,7 @@
   },
   {
    "default": "0",
-   "description": "By default, this will be FALSE.\nIf you want to show preview to the user when\nredirected to emSigner signer gateway page.\n\nPass TRUE if the preview is required before\nsigning the document.\nNote: Not applicable to dsign",
+   "description": "Show document preview before signing on the eMudhra gateway. Not applicable for dSign.",
    "fieldname": "preview_required",
    "fieldtype": "Check",
    "label": "Preview Required"
@@ -61,7 +62,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "This parameter describes the signature mode\nto be enabled for completing the request.\nCurrently, we support four signature options\ni.e. dSign, eSign, eSignature and eIDAS.\n\u2022\ndSign: Requires Crypto Token and\nvalid digital signature issued by licensed\nCertifying Authorities to digitally sign the\nrequest.\n\u2022\neSign v3: eMudhra KYC based signing\n\u2022\neSignature: eSignature is not valid in\nIndia, but it is widely accepted in other\ncountries.\n\u2022\neSign v2.1: eSign (Aadhar based\nsigning) is valid ONLY in India.",
+   "description": "Aadhar: Aadhaar-based eSign (India only). dSign: Digital signature via crypto token. eSign: eMudhra KYC-based signing. eSign v3: Latest eMudhra KYC signing.",
    "fieldname": "signature_mode",
    "fieldtype": "Select",
    "label": "Signature Mode",
@@ -78,32 +79,34 @@
   },
   {
    "fieldname": "section_break_pcpb",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Signature Options",
+   "description": "Enable at least one option when using eSignature mode. Not required for dSign."
   },
   {
    "default": "0",
-   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to upload\nhandwritten signature in emSigner Signer\nGateway page and the same will be affixed on\nthe signed PDF document And using this\noption will invalidate any signed document\nsent for signing again by another signatory.\n\nPass TRUE if you want to enable upload\nsignature option in the gateway.\n\nNote: If the user selects signature type as\neSignature or combination of that, then at\nthat time any of the parameter i.e. enable\neSignature pad/enable draw signature/enable\nfont signature/enable upload signature is\nmandatory.\n\nFor dSign, it is not mandatory.",
+   "description": "Allow uploading a handwritten signature image.",
    "fieldname": "enable_upload_signature",
    "fieldtype": "Check",
    "label": "Enable Upload Signature"
   },
   {
    "default": "0",
-   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to choose or\ngenerate some font based signature in\nemSigner Signer Gateway page and the same\nwill be affixed on the signed PDF document\nAnd using this option will invalidate any\nsigned document sent for signing again by\nanother signatory.\n\nPass TRUE if you want to enable font based\nsignatures to be visible in the gateway.\nNote: If the user selects signature type as\neSignature or combination of that, then at\nthat time any of the parameter i.e. enable\neSignature pad/enable draw signature/enable\nfont signature/enable upload signature is\nmandatory.\nFor dSign, it is not mandatory.",
+   "description": "Allow generating a font-based signature.",
    "fieldname": "enable_font_signature",
    "fieldtype": "Check",
    "label": "Enable Font Signature"
   },
   {
    "default": "0",
-   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to draw\nsignature in emSigner Signer Gateway page\nand the same will be affixed on the signed\nPDF document And using this option will\ninvalidate any signed document sent for\nsigning again by another signatory.\n\nPass TRUE if you want to enable draw\nsignature option in the gateway.\nNote: If the user selects signature type as\neSignature or combination of that, then at\nthat time any of the parameter i.e. enable\neSignature pad/enable draw\nsignature/enable font signature/enable\nupload signature is mandatory.\nFor dSign, it is not mandatory.",
+   "description": "Allow drawing a signature on the gateway.",
    "fieldname": "enable_draw_signature",
    "fieldtype": "Check",
    "label": "Enable Draw Signature"
   },
   {
    "default": "0",
-   "description": "By default this will be FALSE, if enabled then\nthe user will have the option to connect to\nthird-party signature pads. Currently, we\nsupport Topaz signature pad in emSigner\nSigner Gateway page and the same will be\naffixed on the signed PDF document And\nusing this option will invalidate any signed\ndocument sent for signing again by another\nsignatory.\nPass TRUE if you want to enable eSignature\npad option in the gateway.",
+   "description": "Allow connecting a third-party signature pad (e.g. Topaz).",
    "fieldname": "enable_esignature_pad",
    "fieldtype": "Check",
    "label": "Enable eSignature Pad"
@@ -114,7 +117,7 @@
   },
   {
    "default": "0",
-   "description": "By default this value would be FALSE.\nPass it as TRUE if you want to save the\nresponse data with us.\n\nIn case of failure you can request us by calling\nour API's before 48 hours (If Storetodb=TRUE).\nRefer to Transaction Request API section, for\nmore info.\nRefer to Signed Data Request API section, for\nmore info.",
+   "description": "Save response data on eMudhra servers. Allows recovery within 48 hours on failure.",
    "fieldname": "store_to_db",
    "fieldtype": "Check",
    "hidden": 1,
@@ -122,7 +125,7 @@
   },
   {
    "default": "0",
-   "description": "If the file size is more than 10mb, you can\ncompress and share the file",
+   "description": "Compress files larger than 10 MB before sending.",
    "fieldname": "is_compressed",
    "fieldtype": "Check",
    "hidden": 1,
@@ -130,7 +133,7 @@
   },
   {
    "default": "0",
-   "description": "By default this value will be FALSE.\n\nPass TRUE if you want to sign GSTR1 data and\nPass \"IsGSTN3B\" as FALSE.\nPass file value as Base 64 of (GSTR1 JSON\ndata)",
+   "description": "Enable for signing GSTR-1 JSON data.",
    "fieldname": "is_gstin",
    "fieldtype": "Check",
    "hidden": 1,
@@ -138,20 +141,20 @@
   },
   {
    "default": "0",
-   "description": "By default this value will be FALSE.\n\nPass TRUE if you want to sign GSTR3B data\nand Pass \"IsGSTN\" as FALSE.\nPass file value as Base 64 of (Part A~Part B)",
+   "description": "Enable for signing GSTR-3B data.",
    "fieldname": "is_gstn3b",
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Is GSTN3B"
   },
   {
-   "description": "Attach your public certificate.",
+   "description": "Public certificate file (.cer/.pem) provided by emSigner.",
    "fieldname": "public_certificate",
    "fieldtype": "Attach",
    "label": "Public Certificate"
   },
   {
-   "description": "Select the doctypes in which the PDFs needs to signed.",
+   "description": "Doctypes whose PDFs need to be digitally signed.",
    "fieldname": "doctypes",
    "fieldtype": "Table MultiSelect",
    "label": "Doctypes",
@@ -180,7 +183,16 @@
   {
    "fieldname": "session_key",
    "fieldtype": "Password",
-   "label": "Session Key"
+   "label": "Session Key",
+   "description": "AES encryption key provided by emSigner."
+  },
+  {
+   "default": "https://signergateway.emsigner.com/eMsecure/V3_0/Index",
+   "description": "eMudhra gateway URL. Use demo URL for testing: https://demosignergateway.emsigner.com/eMsecure/V3_0/Index",
+   "fieldname": "gateway_url",
+   "fieldtype": "Data",
+   "label": "Gateway URL",
+   "reqd": 1
   },
   {
    "fieldname": "authorization_tab",
@@ -197,7 +209,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-03-12 16:58:33.656670",
+ "modified": "2026-03-16 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Settings",
