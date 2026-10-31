@@ -43,6 +43,12 @@ bench --site <site-name> install-app emsigner
 - [pycryptodome](https://pypi.org/project/pycryptodome/) — AES/RSA encryption
 - [PyJWT](https://pypi.org/project/PyJWT/) — Token-based authentication for external signatories
 
+### Upgrade and verification
+
+Read [the signing upgrade guide](docs/signing-upgrade.md) before release. It covers
+existing links, gateway defaults, placement review, API changes and rollback.
+Use the demo gateway and a disposable test site for verification.
+
 ### Demo
 
 

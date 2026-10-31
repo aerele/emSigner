@@ -1,3 +1,12 @@
+import { loadPdfDocument, createPreviewState } from "./pdf_preview.mjs";
+import { signatureUpdates, persistSignatureUpdates } from "./signature_updates.mjs";
+
+frappe.provide("emsigner");
+frappe.emsigner.signatureUpdates = signatureUpdates;
+frappe.emsigner.load_pdf_document = loadPdfDocument;
+frappe.emsigner.create_preview_state = createPreviewState;
+frappe.emsigner.persistSignatureUpdates = persistSignatureUpdates;
+
 // Copyright (c) 2025, Aerele Technologies Private Limited and contributors
 // For license information, please see license.txt
 
@@ -8,7 +17,7 @@
 
 	// Read enabled doctypes from boot info (no API call needed)
 	frappe.after_ajax(() => {
-		const doctypes = (frappe.boot.emsigner_doctypes || []);
+		const doctypes = frappe.boot.emsigner_doctypes || [];
 		doctypes.forEach((doctype_name) => {
 			setup_emsigner_form(doctype_name);
 		});
@@ -85,7 +94,10 @@
 							freeze_message: __("Fetching signatory details..."),
 							callback() {
 								frappe.show_alert(
-									{ message: __("Signatory details fetched successfully"), indicator: "green" },
+									{
+										message: __("Signatory details fetched successfully"),
+										indicator: "green",
+									},
 									5
 								);
 								frm.reload_doc();
@@ -106,7 +118,9 @@
 		let color = "";
 
 		if (completed.length === signatories.length) {
-			msg = __("All {0} signatory(ies) have signed. Submit this document to confirm.", [signatories.length]);
+			msg = __("All {0} signatory(ies) have signed. Submit this document to confirm.", [
+				signatories.length,
+			]);
 			color = "green";
 		} else if (completed.length > 0) {
 			msg = __("{0} of {1} signed. Waiting for: {2}", [
@@ -115,7 +129,13 @@
 				pending.map((s) => s.signatory_name).join(", "),
 			]);
 			color = "orange";
-		} else if (signatories.some((s) => s.signature_status === "Pending Review" || s.signature_status === "Review In-Progress")) {
+		} else if (
+			signatories.some(
+				(s) =>
+					s.signature_status === "Pending Review" ||
+					s.signature_status === "Review In-Progress"
+			)
+		) {
 			msg = __("Signing in progress. {0} signatory(ies) pending.", [pending.length]);
 			color = "blue";
 		}
@@ -126,7 +146,7 @@
 				background: var(--${color}-50, var(--subtle-fg));
 				border: 1px solid var(--${color}-200, var(--border-color));
 				color: var(--${color}-600, var(--text-color));
-			">${msg}</div>`);
+			"></div>`).text(msg);
 			frm.layout.wrapper.find(".form-message").after($banner);
 		}
 	}
@@ -143,25 +163,42 @@
 			Failure: { icon: "&#10006;", color: "var(--red-500)" },
 		};
 
-		const rows_html = signatories.map((s) => {
-			const status = s.signature_status || "Not Initiated";
-			const si = STATUS_ICONS[status] || STATUS_ICONS["Not Initiated"];
-			const name = frappe.utils.escape_html(s.signatory_name);
-			const email = frappe.utils.escape_html(s.signatory_email);
-			const can_resend = status === "Pending Review" || status === "Failure" || status === "Not Initiated";
+		const rows_html = signatories
+			.map((s) => {
+				const status = s.signature_status || "Not Initiated";
+				const si = STATUS_ICONS[status] || STATUS_ICONS["Not Initiated"];
+				const name = frappe.utils.escape_html(s.signatory_name);
+				const email = frappe.utils.escape_html(s.signatory_email);
+				const can_resend =
+					status === "Pending Review" ||
+					status === "Failure" ||
+					status === "Not Initiated";
 
-			return `<div class="sig-status-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-color);">
-				<span style="font-size: 20px; color: ${si.color}; width: 28px; text-align: center;">${si.icon}</span>
+				return `<div class="sig-status-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-color);">
+				<span style="font-size: 20px; color: ${si.color}; width: 28px; text-align: center;">${
+					si.icon
+				}</span>
 				<div style="flex: 1; min-width: 0;">
 					<div style="font-weight: 600; font-size: 14px;">${name}</div>
 					<div style="font-size: 12px; color: var(--text-muted);">${email}</div>
 				</div>
-				<span class="indicator-pill ${STATUS_COLORS[status] || "grey"}" style="font-size: 12px;">${frappe.utils.escape_html(status)}</span>
-				${can_resend ? `<button class="btn btn-xs btn-default resend-btn" data-email="${email}" data-name="${frappe.utils.escape_html(s.name)}">${__("Resend")}</button>` : ""}
+				<span class="indicator-pill ${
+					STATUS_COLORS[status] || "grey"
+				}" style="font-size: 12px;">${frappe.utils.escape_html(status)}</span>
+				${
+					can_resend
+						? `<button class="btn btn-xs btn-default resend-btn" data-email="${email}" data-name="${frappe.utils.escape_html(
+								s.name
+						  )}">${__("Resend")}</button>`
+						: ""
+				}
 			</div>`;
-		}).join("");
+			})
+			.join("");
 
-		const completed_count = signatories.filter((s) => s.signature_status === "Completed").length;
+		const completed_count = signatories.filter(
+			(s) => s.signature_status === "Completed"
+		).length;
 		const total = signatories.length;
 		const progress_pct = total ? Math.round((completed_count / total) * 100) : 0;
 
@@ -184,14 +221,57 @@
 				<div class="sig-status-list">
 					${rows_html}
 				</div>
-				${completed_count === total ? `
+				${
+					completed_count === total
+						? `
 				<div style="padding: 16px; text-align: center; background: var(--green-50, #E8F5E9);">
 					<span style="font-size: 14px; font-weight: 600; color: var(--green-600);">
 						${__("All signatures received. Submit this document to confirm.")}
 					</span>
-				</div>` : ""}
+				</div>`
+						: ""
+				}
 			</div>
 		`);
+
+		// An unused legacy custom link needs a path back to the placement preview.
+		for (const row of signatories) {
+			if (
+				row.sign_position !== "Customize" ||
+				row.coordinates_reviewed ||
+				!["Pending Review", "Failure"].includes(row.signature_status)
+			)
+				continue;
+			const $action = $("<button class='btn btn-xs btn-default'>").text(
+				__("Review placement: {0}", [row.signatory_name || row.signatory_email])
+			);
+			$action.on("click", () =>
+				frappe.confirm(
+					__(
+						"This revokes the unused email link for this signatory. Review the position and send a new link afterward. Continue?"
+					),
+					async () => {
+						$action.prop("disabled", true);
+						try {
+							await frappe.xcall(
+								"emsigner.emsigner.api.request_sign.prepare_placement_review",
+								{
+									doctype: frm.doc.doctype,
+									docname: frm.doc.name,
+									child_name: row.name,
+								}
+							);
+							await frm.reload_doc();
+							dialog.hide();
+							validate_and_send_sign_request(frm);
+						} catch (_) {
+							$action.prop("disabled", false);
+						}
+					}
+				)
+			);
+			dialog.$body.append($action);
+		}
 
 		// Resend handler
 		dialog.$body.find(".resend-btn").on("click", function () {
@@ -245,22 +325,25 @@
 				const data = r.message || {};
 				if (!data.pending || !data.pending.length) {
 					frappe.show_alert(
-						{ message: __("No pending signatories found"), indicator: "orange" }, 5
+						{ message: __("No pending signatories found"), indicator: "orange" },
+						5
 					);
 					return;
 				}
 				show_pre_sign_preview(frm, data);
 			},
 			error() {
-				frappe.confirm(
-					__("Could not generate preview. Send signing requests without previewing?"),
-					() => send_sign_request(frm)
+				frappe.msgprint(
+					__("Could not load the document preview. Check the error and try again.")
 				);
 			},
 		});
 	}
 
 	function show_pre_sign_preview(frm, data) {
+		const sourceIdentity = { doctype: frm.doc.doctype, name: frm.doc.name };
+		const sameDocument = () =>
+			frm.doc.doctype === sourceIdentity.doctype && frm.doc.name === sourceIdentity.name;
 		const { pdf_base64, page_count, pending, warnings } = data;
 
 		// Assign a color to each signatory for visual distinction
@@ -276,9 +359,7 @@
 		// Build warnings HTML
 		let warnings_html = "";
 		if (warnings && warnings.length) {
-			const items = warnings.map(
-				(w) => `<li>${frappe.utils.escape_html(w)}</li>`
-			).join("");
+			const items = warnings.map((w) => `<li>${frappe.utils.escape_html(w)}</li>`).join("");
 			warnings_html = `
 				<div class="warnings-banner" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--yellow-50, #FFF9E6); border: 1px solid var(--yellow-200, #FFE69C); border-radius: 6px; font-size: 12px; text-align: left;">
 					<span style="font-size: 18px; line-height: 1;">&#9888;</span>
@@ -304,21 +385,31 @@
 		// Build page options for select dropdown
 		function build_page_options(selected) {
 			const opts = ["ALL", "FIRST", "LAST", "EVEN", "ODD", "SPECIFY"];
-			return opts.map(
-				(o) => `<option value="${o}" ${o === selected ? "selected" : ""}>${o.charAt(0) + o.slice(1).toLowerCase()}</option>`
-			).join("");
+			return opts
+				.map(
+					(o) =>
+						`<option value="${o}" ${o === selected ? "selected" : ""}>${
+							o.charAt(0) + o.slice(1).toLowerCase()
+						}</option>`
+				)
+				.join("");
 		}
 
 		// Build signatory card data
-		const signatory_cards = pending.map((s, i) => {
-			const color = SIGNATORY_COLORS[i % SIGNATORY_COLORS.length];
-			const name = frappe.utils.escape_html(s.signatory_name);
-			const is_custom = s.sign_position === "Customize";
-			const pos_label = is_custom
-				? (s.customize_coordinates ? __("Custom position") : __("No coordinates set"))
-				: (s.sign_position || __("Not set"));
-			const specify_display = s.select_page === "SPECIFY" ? "" : "display: none;";
-			return `<div class="sig-card" data-index="${i}" data-is-custom="${is_custom ? 1 : 0}"
+		const signatory_cards = pending
+			.map((s, i) => {
+				const color = SIGNATORY_COLORS[i % SIGNATORY_COLORS.length];
+				const name = frappe.utils.escape_html(s.signatory_name);
+				const is_custom = s.sign_position === "Customize";
+				const pos_label = is_custom
+					? s.customize_coordinates
+						? __("Custom position")
+						: __("No coordinates set")
+					: s.sign_position || __("Not set");
+				const specify_display = s.select_page === "SPECIFY" ? "" : "display: none;";
+				return `<div class="sig-card" data-index="${i}" data-is-custom="${
+					is_custom ? 1 : 0
+				}"
 				style="padding: 10px 12px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; transition: all 0.15s ease;">
 				<div style="display: flex; align-items: center; gap: 10px;">
 					<span style="display: inline-block; width: 18px; height: 18px; flex-shrink: 0;
@@ -333,19 +424,25 @@
 					<select class="sig-page-select form-control input-xs" data-index="${i}" style="font-size: 11px; height: 26px; padding: 2px 6px;">
 						${build_page_options(s.select_page || "ALL")}
 					</select>
-					<input type="number" class="sig-page-number form-control input-xs" data-index="${i}" placeholder="${__("Page #")}"
-						value="${s.page_number || ""}" min="1" style="font-size: 11px; height: 26px; padding: 2px 6px; ${specify_display}" />
+					<input type="number" class="sig-page-number form-control input-xs" data-index="${i}" placeholder="${__(
+					"Page #"
+				)}"
+						value="${
+							s.page_number || ""
+						}" min="1" style="font-size: 11px; height: 26px; padding: 2px 6px; ${specify_display}" />
 				</div>
 			</div>`;
-		}).join("");
+			})
+			.join("");
 
 		// Build overlay divs for all signatories
-		const overlays = pending.map((s, i) => {
-			const color = SIGNATORY_COLORS[i % SIGNATORY_COLORS.length];
-			const name = frappe.utils.escape_html(s.signatory_name);
-			const is_custom = s.sign_position === "Customize";
-			const has_coords = is_custom && !!s.customize_coordinates;
-			return `<div class="sig-overlay" data-sig-index="${i}"
+		const overlays = pending
+			.map((s, i) => {
+				const color = SIGNATORY_COLORS[i % SIGNATORY_COLORS.length];
+				const name = frappe.utils.escape_html(s.signatory_name);
+				const is_custom = s.sign_position === "Customize";
+				const has_coords = is_custom && !!s.customize_coordinates;
+				return `<div class="sig-overlay" data-sig-index="${i}"
 				data-sign-position="${frappe.utils.escape_html(s.sign_position || "")}"
 				data-coords="${frappe.utils.escape_html(s.customize_coordinates || "")}"
 				data-select-page="${frappe.utils.escape_html(s.select_page || "ALL")}"
@@ -359,18 +456,47 @@
 				white-space: nowrap; user-select: none;
 				${is_custom && !has_coords ? "left: 20px; top: 20px;" : ""}
 			">${name}</div>`;
-		}).join("");
+			})
+			.join("");
 
 		const dialog = new frappe.ui.Dialog({
 			title: __("Verify & Adjust Signature Positions — {0}", [frm.doc.name]),
 			size: "extra-large",
 			primary_action_label: __("Confirm & Send"),
-			primary_action() {
-				// Save any updated coordinates/page settings before sending
-				save_updated_coordinates(frm, pending, sig_updates, () => {
+			async primary_action() {
+				if (!sameDocument()) {
+					frappe.msgprint(
+						__("The document changed. Reopen its preview before sending requests.")
+					);
+					return;
+				}
+				if (dialog.saving) return;
+				dialog.saving = true;
+				dialog.$body.prop("inert", true);
+				dialog.get_primary_btn().prop("disabled", true);
+				try {
+					await save_updated_coordinates(frm, pending, sig_updates);
+					if (!sameDocument() || !dialog.$wrapper.is(":visible")) {
+						frappe.msgprint(
+							__(
+								"The document changed or the preview closed. Reopen its preview before sending requests."
+							)
+						);
+						return;
+					}
+					await send_sign_request(frm, sourceIdentity);
 					dialog.hide();
-					send_sign_request(frm);
-				});
+				} catch (_) {
+					frappe.msgprint(
+						__(
+							"Could not save all changes or send the requests. Your edits remain here. Check the error and try again."
+						)
+					);
+				} finally {
+					dialog.saving = false;
+					dialog.$body.prop("inert", false);
+					dialog.get_primary_btn().prop("disabled", false);
+				}
 			},
 			secondary_action_label: __("Cancel"),
 			secondary_action() {
@@ -383,9 +509,11 @@
 				<div class="sig-sidebar" style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
 					<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px;">
 						<div style="font-weight: 600; font-size: 12px; color: var(--heading-color); text-transform: uppercase; letter-spacing: 0.5px;">
-							${__("Signatories")}
+							${__("Signatories ({0})", [pending.length])}
 						</div>
-						<button class="btn btn-xs btn-default add-signatory-btn" title="${__("Add External Signatory")}">+ ${__("Add")}</button>
+						<button class="btn btn-xs btn-default add-signatory-btn" title="${__(
+							"Add External Signatory"
+						)}">+ ${__("Add")}</button>
 					</div>
 					<div class="sig-cards-list" style="display: flex; flex-direction: column; gap: 4px;">
 						${signatory_cards}
@@ -416,6 +544,21 @@
 		const $nextBtn = $container.find(".next-page");
 		const $pageInfo = $container.find(".page-info");
 		const canvas = $canvas[0];
+		const $previewStatus = $("<p>").attr("role", "status").prependTo(dialog.$body);
+		const previewState = frappe.emsigner.create_preview_state(({ busy, failed }) => {
+			$container.prop("inert", busy).attr("aria-busy", busy);
+			dialog.get_primary_btn().prop("disabled", busy);
+			$previewStatus
+				.text(
+					failed
+						? __(
+								"Could not load the PDF preview. Close and reopen this dialog to try again."
+						  )
+						: __("Loading PDF preview...")
+				)
+				.toggle(busy);
+		});
+		const render_preview_page = previewState.wrap(render_preview_page_content);
 
 		let current_page = 1;
 		let total_pages = 1;
@@ -431,29 +574,30 @@
 		let dragOffsetX = 0;
 		let dragOffsetY = 0;
 
-		load_pdfjs().then(() => {
-			try {
-				const pdfData = atob(pdf_base64);
-				pdfjsLib.getDocument({ data: pdfData }).promise.then((pdf) => {
-					pdf_doc = pdf;
-					total_pages = pdf.numPages;
-					$pageInfo.text(`Page ${current_page} / ${total_pages}`);
-					$prevBtn.prop("disabled", current_page <= 1);
-					$nextBtn.prop("disabled", current_page >= total_pages);
-					render_preview_page(current_page);
-				}).catch(() => {
-					frappe.show_alert({ message: __("Failed to load PDF preview"), indicator: "red" }, 5);
-				});
-			} catch (e) {
-				frappe.show_alert({ message: __("Invalid PDF data"), indicator: "red" }, 5);
-			}
-		});
+		frappe.emsigner
+			.load_pdf_document(pdf_base64)
+			.then((pdf) => {
+				if (!previewState.attach(pdf)) return;
+				pdf_doc = pdf;
+				total_pages = pdf.numPages;
+				$pageInfo.text(`Page ${current_page} / ${total_pages}`);
+				$prevBtn.prop("disabled", current_page <= 1);
+				$nextBtn.prop("disabled", current_page >= total_pages);
+				render_preview_page(current_page);
+			})
+			.catch(() => previewState.fail());
 
 		$prevBtn.on("click", () => {
-			if (current_page > 1) { current_page--; render_preview_page(current_page); }
+			if (current_page > 1) {
+				current_page--;
+				render_preview_page(current_page);
+			}
 		});
 		$nextBtn.on("click", () => {
-			if (current_page < total_pages) { current_page++; render_preview_page(current_page); }
+			if (current_page < total_pages) {
+				current_page++;
+				render_preview_page(current_page);
+			}
 		});
 
 		// Click a signatory card → navigate to their page and select
@@ -484,9 +628,12 @@
 			const targetPage = get_target_page_for_index(idx);
 			current_page = targetPage;
 			active_sig_index = idx;
-			$container.find(".sig-card").css({ "border-color": "transparent", "background": "none" });
+			$container
+				.find(".sig-card")
+				.css({ "border-color": "transparent", background: "none" });
 			$container.find(`.sig-card[data-index="${idx}"]`).css({
-				"border-color": "var(--primary)", "background": "var(--subtle-fg)",
+				"border-color": "var(--primary)",
+				background: "var(--subtle-fg)",
 			});
 			render_preview_page(current_page);
 		});
@@ -505,9 +652,12 @@
 
 		function select_signatory(idx) {
 			active_sig_index = idx;
-			$container.find(".sig-card").css({ "border-color": "transparent", "background": "none" });
+			$container
+				.find(".sig-card")
+				.css({ "border-color": "transparent", background: "none" });
 			$container.find(`.sig-card[data-index="${idx}"]`).css({
-				"border-color": "var(--primary)", "background": "var(--subtle-fg)",
+				"border-color": "var(--primary)",
+				background: "var(--subtle-fg)",
 			});
 
 			const targetPage = get_target_page_for_index(idx);
@@ -562,9 +712,9 @@
 				pending[sigIdx].sign_position = "Customize";
 			}
 
-			$container.find(`.sig-card[data-index="${sigIdx}"] .sig-card-detail`).text(
-				__("Custom position") + " (" + __("moved") + ")"
-			);
+			$container
+				.find(`.sig-card[data-index="${sigIdx}"] .sig-card-detail`)
+				.text(__("Custom position") + " (" + __("moved") + ")");
 		});
 
 		$(document).on("mouseup.pre_sign", () => {
@@ -576,6 +726,7 @@
 		});
 
 		dialog.onhide = () => {
+			previewState.dispose();
 			$(document).off("mousemove.pre_sign");
 			$(document).off("mouseup.pre_sign");
 			isDragging = false;
@@ -587,13 +738,20 @@
 			const selectPage = (u.select_page || "").toUpperCase();
 			const specifiedPage = parseInt(u.page_number) || 0;
 			switch (selectPage) {
-				case "FIRST": return 1;
-				case "LAST": return total_pages;
-				case "SPECIFY": return Math.min(specifiedPage, total_pages) || 1;
-				case "ALL": return current_page;
-				case "EVEN": return current_page % 2 === 0 ? current_page : Math.min(2, total_pages);
-				case "ODD": return current_page % 2 === 1 ? current_page : 1;
-				default: return current_page;
+				case "FIRST":
+					return 1;
+				case "LAST":
+					return total_pages;
+				case "SPECIFY":
+					return Math.min(specifiedPage, total_pages) || 1;
+				case "ALL":
+					return current_page;
+				case "EVEN":
+					return current_page % 2 === 0 ? current_page : Math.min(2, total_pages);
+				case "ODD":
+					return current_page % 2 === 1 ? current_page : 1;
+				default:
+					return current_page;
 			}
 		}
 
@@ -601,9 +759,13 @@
 			$wrapper.find(".sig-overlay").each(function () {
 				const sigIdx = parseInt($(this).data("sig-index"));
 				if (sigIdx === active_sig_index) {
-					$(this).css({ "box-shadow": "0 0 0 3px var(--primary)", "z-index": 20, "opacity": 1 });
+					$(this).css({
+						"box-shadow": "0 0 0 3px var(--primary)",
+						"z-index": 20,
+						opacity: 1,
+					});
 				} else {
-					$(this).css({ "box-shadow": "none", "z-index": 10, "opacity": 0.6 });
+					$(this).css({ "box-shadow": "none", "z-index": 10, opacity: 0.6 });
 				}
 			});
 		}
@@ -612,37 +774,52 @@
 			const selectPage = String($el.data("select-page") || "").toUpperCase();
 			const specifiedPage = parseInt($el.data("page-number")) || 0;
 			switch (selectPage) {
-				case "ALL": return true;
-				case "FIRST": return pageNum === 1;
-				case "LAST": return pageNum === totalPages;
-				case "EVEN": return pageNum % 2 === 0;
-				case "ODD": return pageNum % 2 === 1;
-				case "SPECIFY": return pageNum === specifiedPage;
-				default: return true;
+				case "ALL":
+					return true;
+				case "FIRST":
+					return pageNum === 1;
+				case "LAST":
+					return pageNum === totalPages;
+				case "EVEN":
+					return pageNum % 2 === 0;
+				case "ODD":
+					return pageNum % 2 === 1;
+				case "SPECIFY":
+					return pageNum === specifiedPage;
+				default:
+					return true;
 			}
 		}
 
 		function get_preset_position(position, width, height) {
 			const margin = 10;
 			const positions = {
-				"Top-Left":      { x: margin,                  y: margin },
-				"Top-Center":    { x: width * 0.35,            y: margin },
-				"Top-Right":     { x: width * 0.7,             y: margin },
-				"Middle-Left":   { x: margin,                  y: height * 0.45 },
-				"Middle-Center": { x: width * 0.35,            y: height * 0.45 },
-				"Middle-Right":  { x: width * 0.7,             y: height * 0.45 },
-				"Bottom-Left":   { x: margin,                  y: height * 0.88 },
-				"Bottom-Center": { x: width * 0.35,            y: height * 0.88 },
-				"Bottom-Right":  { x: width * 0.7,             y: height * 0.88 },
+				"Top-Left": { x: margin, y: margin },
+				"Top-Center": { x: width * 0.35, y: margin },
+				"Top-Right": { x: width * 0.7, y: margin },
+				"Middle-Left": { x: margin, y: height * 0.45 },
+				"Middle-Center": { x: width * 0.35, y: height * 0.45 },
+				"Middle-Right": { x: width * 0.7, y: height * 0.45 },
+				"Bottom-Left": { x: margin, y: height * 0.88 },
+				"Bottom-Center": { x: width * 0.35, y: height * 0.88 },
+				"Bottom-Right": { x: width * 0.7, y: height * 0.88 },
 			};
 			return positions[position] || { x: margin, y: margin };
 		}
 
-		function render_preview_page(pageNum) {
+		function render_preview_page_content(pageNum) {
 			if (!pdf_doc) return;
-			pdf_doc.getPage(pageNum).then((page) => {
+			return pdf_doc.getPage(pageNum).then(async (page) => {
 				const viewport = page.getViewport({ scale: 1.0 });
-				const maxWidth = 700;
+				const maxWidth = Math.min(
+					700,
+					Math.max(
+						64,
+						($container.find(".pdf-section").innerWidth() ||
+							$container.innerWidth() ||
+							700) - 2
+					)
+				);
 				const displayScale = Math.min(1, maxWidth / viewport.width);
 				current_display_scale = displayScale;
 				const scaledViewport = page.getViewport({ scale: displayScale });
@@ -653,48 +830,57 @@
 				pdf_height = scaledViewport.height;
 				$wrapper.css({ width: scaledViewport.width, height: scaledViewport.height });
 
-				page.render({ canvasContext: canvas.getContext("2d"), viewport: scaledViewport }).promise.then(() => {
-					$wrapper.find(".sig-overlay").each(function () {
-						const $el = $(this);
-						if (!should_show_on_page($el, pageNum, total_pages)) {
-							$el.css("display", "none");
-							return;
-						}
-
-						const signPosition = $el.data("sign-position");
-						const is_custom = signPosition === "Customize";
-
-						if (is_custom) {
-							const coordsStr = $el.data("coords");
-							if (!coordsStr) {
-								$el.css({ display: "flex", "align-items": "center" });
+				await page
+					.render({
+						canvasContext: canvas.getContext("2d"),
+						viewport: scaledViewport,
+					})
+					.promise.then(() => {
+						$wrapper.find(".sig-overlay").each(function () {
+							const $el = $(this);
+							if (!should_show_on_page($el, pageNum, total_pages)) {
+								$el.css("display", "none");
 								return;
 							}
-							const parts = String(coordsStr).split(",").map(Number);
-							if (parts.length !== 4 || parts.some(isNaN)) return;
-							const [gx, gy, gw, gh] = parts;
-							$el.css({
-								left: gx * displayScale,
-								top: pdf_height - gy * displayScale,
-								width: gw * displayScale,
-								height: gh * displayScale,
-								display: "flex",
-								"align-items": "center",
-								"justify-content": "center",
-							});
-						} else {
-							// Preset position — place at approximate location
-							const pos = get_preset_position(signPosition, pdf_width, pdf_height);
-							$el.css({
-								left: pos.x,
-								top: pos.y,
-								display: "flex",
-								"align-items": "center",
-							});
-						}
+
+							const signPosition = $el.data("sign-position");
+							const is_custom = signPosition === "Customize";
+
+							if (is_custom) {
+								const coordsStr = $el.data("coords");
+								if (!coordsStr) {
+									$el.css({ display: "flex", "align-items": "center" });
+									return;
+								}
+								const parts = String(coordsStr).split(",").map(Number);
+								if (parts.length !== 4 || parts.some(isNaN)) return;
+								const [gx, gy, gw, gh] = parts;
+								$el.css({
+									left: gx * displayScale,
+									top: pdf_height - gy * displayScale,
+									width: gw * displayScale,
+									height: gh * displayScale,
+									display: "flex",
+									"align-items": "center",
+									"justify-content": "center",
+								});
+							} else {
+								// Preset position — place at approximate location
+								const pos = get_preset_position(
+									signPosition,
+									pdf_width,
+									pdf_height
+								);
+								$el.css({
+									left: pos.x,
+									top: pos.y,
+									display: "flex",
+									"align-items": "center",
+								});
+							}
+						});
+						update_overlay_styles();
 					});
-					update_overlay_styles();
-				});
 
 				$pageInfo.text(`Page ${pageNum} / ${total_pages}`);
 				$prevBtn.prop("disabled", pageNum <= 1);
@@ -726,7 +912,8 @@
 						label: __("Sign Position"),
 						fieldname: "sign_position",
 						fieldtype: "Select",
-						options: "Top-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
+						options:
+							"Top-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
 						reqd: 1,
 						default: "Bottom-Left",
 					},
@@ -746,12 +933,24 @@
 						mandatory_depends_on: "eval: doc.select_page == 'SPECIFY'",
 					},
 				],
-				(values) => {
+				async (values) => {
+					if (!sameDocument() || dialog.saving) return;
+					try {
+						await save_updated_coordinates(frm, pending, sig_updates);
+						if (!sameDocument() || !dialog.$wrapper.is(":visible")) return;
+					} catch (_) {
+						frappe.msgprint(
+							__(
+								"Save the current signature positions before adding a signatory. Your edits remain here."
+							)
+						);
+						return;
+					}
 					frappe.call({
 						method: "emsigner.emsigner.api.request_sign.add_external_signatory",
 						args: {
-							doctype: frm.doc.doctype,
-							docname: frm.doc.name,
+							doctype: sourceIdentity.doctype,
+							docname: sourceIdentity.name,
 							signatory_name: values.signatory_name,
 							signatory_email: values.signatory_email,
 							sign_position: values.sign_position,
@@ -761,13 +960,17 @@
 						freeze: true,
 						freeze_message: __("Adding signatory..."),
 						callback() {
+							if (!sameDocument()) return;
 							frappe.show_alert(
-								{ message: __("Signatory added. Refreshing preview..."), indicator: "green" },
+								{
+									message: __("Signatory added. Refreshing preview..."),
+									indicator: "green",
+								},
 								3
 							);
 							dialog.hide();
 							frm.reload_doc().then(() => {
-								validate_and_send_sign_request(frm);
+								if (sameDocument()) validate_and_send_sign_request(frm);
 							});
 						},
 					});
@@ -780,64 +983,24 @@
 		dialog.show();
 	}
 
-	function save_updated_coordinates(frm, pending, sig_updates, callback) {
-		const updates = [];
-		for (const [idx, u] of Object.entries(sig_updates)) {
-			const s = pending[parseInt(idx)];
-			if (!s || !s.child_name) continue;
-
-			// Include if position was converted to Customize or if coords/page changed
-			const position_converted = u.sign_position === "Customize" && s.sign_position !== "Customize";
-			const is_customize = u.sign_position === "Customize" || s.sign_position === "Customize";
-			if (!is_customize) continue;
-
-			const coords_changed = u.coords && u.coords !== s.customize_coordinates;
-			const page_changed = u.select_page !== (s.select_page || "");
-			const pagenum_changed = String(u.page_number || "") !== String(s.page_number || "");
-
-			if (position_converted || coords_changed || page_changed || pagenum_changed) {
-				updates.push({
-					child_name: s.child_name,
-					coordinates: u.coords || s.customize_coordinates,
-					select_page: u.select_page || s.select_page,
-					page_number: u.page_number || "",
-					sign_position: u.sign_position || s.sign_position,
-				});
-			}
-		}
-
-		if (!updates.length) {
-			callback();
-			return;
-		}
-
-		const promises = updates.map((u) =>
-			frappe.xcall("emsigner.emsigner.api.request_sign.update_coordinates_value", {
-				child_doctype: "emSigner Signatory Detail",
-				child_name: u.child_name,
-				coordinates: u.coordinates,
-				select_page: u.select_page,
-				page_number: u.page_number,
-				sign_position: u.sign_position,
-			})
+	async function save_updated_coordinates(frm, pending, sig_updates) {
+		const updates = signatureUpdates(pending, sig_updates);
+		const count = await persistSignatureUpdates(
+			frappe.xcall,
+			"emSigner Signatory Detail",
+			updates
 		);
-
-		Promise.all(promises).then(() => {
+		if (count)
 			frappe.show_alert(
-				{ message: __("{0} signature position(s) updated", [updates.length]), indicator: "blue" }, 3
+				{ message: __("{0} signature position(s) updated", [count]), indicator: "blue" },
+				3
 			);
-			callback();
-		}).catch(() => {
-			frappe.show_alert(
-				{ message: __("Failed to save some position updates"), indicator: "red" }, 5
-			);
-		});
 	}
 
-	function send_sign_request(frm) {
-		frappe.call({
+	function send_sign_request(frm, sourceIdentity) {
+		return frappe.call({
 			method: "emsigner.emsigner.api.request_sign.send_email_request",
-			args: { docname: frm.doc.name, doctype: frm.doc.doctype },
+			args: { docname: sourceIdentity.name, doctype: sourceIdentity.doctype },
 			freeze: true,
 			freeze_message: __("Sending signature requests..."),
 			callback() {
@@ -845,7 +1008,11 @@
 					{ message: __("Signature requests sent successfully"), indicator: "green" },
 					5
 				);
-				frm.reload_doc();
+				if (
+					frm.doc.name === sourceIdentity.name &&
+					frm.doc.doctype === sourceIdentity.doctype
+				)
+					frm.reload_doc();
 			},
 			error() {
 				frappe.show_alert(
@@ -882,7 +1049,9 @@
 				const $status_cell = $row.find('[data-field="signature_status"] .static-area');
 				if ($status_cell.length && !$status_cell.find(".indicator-pill").length) {
 					$status_cell.html(
-						`<span class="indicator-pill ${color}">${frappe.utils.escape_html(status || "Not Initiated")}</span>`
+						`<span class="indicator-pill ${color}">${frappe.utils.escape_html(
+							status || "Not Initiated"
+						)}</span>`
 					);
 				}
 			});
@@ -894,7 +1063,10 @@
 	function open_signature_placement_dialog(frm, row) {
 		if (row.sign_position !== "Customize") {
 			frappe.show_alert(
-				{ message: __("Set Sign Position to 'Customize' to place signature"), indicator: "orange" },
+				{
+					message: __("Set Sign Position to 'Customize' to place signature"),
+					indicator: "orange",
+				},
 				5
 			);
 			return;
@@ -902,9 +1074,8 @@
 
 		// Collect other signatories on this document who already have coordinates
 		const other_signatories = (frm.doc.signatory_detail || []).filter(
-			(s) => s.name !== row.name
-				&& s.sign_position === "Customize"
-				&& s.customize_coordinates
+			(s) =>
+				s.name !== row.name && s.sign_position === "Customize" && s.customize_coordinates
 		);
 
 		frappe.call({
@@ -922,10 +1093,7 @@
 				if (r.message) {
 					show_placement_dialog(frm, row, r.message, other_signatories);
 				} else {
-					frappe.show_alert(
-						{ message: __("Failed to load PDF"), indicator: "red" },
-						5
-					);
+					frappe.show_alert({ message: __("Failed to load PDF"), indicator: "red" }, 5);
 				}
 			},
 		});
@@ -951,9 +1119,12 @@
 		}
 
 		// Build ghost overlay HTML for other signatories
-		const ghost_overlays = (other_signatories || []).map((s) => {
-			const name = frappe.utils.escape_html(s.signatory_name || "Other");
-			return `<div class="ghost-signature" data-coords="${frappe.utils.escape_html(s.customize_coordinates)}" style="
+		const ghost_overlays = (other_signatories || [])
+			.map((s) => {
+				const name = frappe.utils.escape_html(s.signatory_name || "Other");
+				return `<div class="ghost-signature" data-coords="${frappe.utils.escape_html(
+					s.customize_coordinates
+				)}" style="
 				position: absolute; padding: 6px 12px;
 				background: rgba(200, 200, 200, 0.25);
 				border: 1px dashed var(--gray-400);
@@ -962,7 +1133,8 @@
 				z-index: 5; display: none;
 				white-space: nowrap; overflow: hidden;
 			">${name}</div>`;
-		}).join("");
+			})
+			.join("");
 
 		const dialog = new frappe.ui.Dialog({
 			title: __("Place Signature — {0}", [row.signatory_name || "Signatory"]),
@@ -971,7 +1143,10 @@
 			primary_action() {
 				if (!has_dragged) {
 					frappe.show_alert(
-						{ message: __("Please drag the signature box to the desired position"), indicator: "orange" },
+						{
+							message: __("Please drag the signature box to the desired position"),
+							indicator: "orange",
+						},
 						5
 					);
 					return;
@@ -984,6 +1159,7 @@
 				].join(",");
 
 				frappe.model.set_value(row.doctype, row.name, "customize_coordinates", coords_str);
+				frappe.model.set_value(row.doctype, row.name, "coordinates_reviewed", 1);
 				frm.dirty();
 				frm.save().then(() => {
 					frappe.show_alert(
@@ -1001,7 +1177,9 @@
 
 		dialog.$body.html(`
 			<div class="signature-placement-container" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
-				${other_signatories && other_signatories.length ? `
+				${
+					other_signatories && other_signatories.length
+						? `
 				<div class="legend-bar" style="display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-muted);">
 					<span style="display: flex; align-items: center; gap: 4px;">
 						<span style="display: inline-block; width: 14px; height: 14px; background: rgba(55,125,255,0.15); border: 2px dashed var(--primary); border-radius: 3px;"></span>
@@ -1012,7 +1190,9 @@
 						${__("Other signatories")}
 					</span>
 				</div>
-				` : ""}
+				`
+						: ""
+				}
 				<div class="page-controls" style="display: flex; align-items: center; gap: 12px;">
 					<button class="btn btn-xs btn-default prev-page" disabled>&laquo; Prev</button>
 					<span class="page-info text-muted" style="font-size: 13px;">Page 1 / 1</span>
@@ -1049,20 +1229,35 @@
 		const $nextBtn = $container.find(".next-page");
 		const $pageInfo = $container.find(".page-info");
 		const canvas = $canvas[0];
+		const $previewStatus = $("<p>").attr("role", "status").prependTo(dialog.$body);
+		const previewState = frappe.emsigner.create_preview_state(({ busy, failed }) => {
+			$container.prop("inert", busy).attr("aria-busy", busy);
+			dialog.get_primary_btn().prop("disabled", busy);
+			$previewStatus
+				.text(
+					failed
+						? __(
+								"Could not load the PDF preview. Close and reopen this dialog to try again."
+						  )
+						: __("Loading PDF preview...")
+				)
+				.toggle(busy);
+		});
+		const render_page = previewState.wrap(render_page_content);
 
 		// Load pdf.js dynamically
-		load_pdfjs().then(() => {
-			const pdfData = atob(pdf_base64);
-			const loadingTask = pdfjsLib.getDocument({ data: pdfData });
-			loadingTask.promise.then((pdf) => {
+		frappe.emsigner
+			.load_pdf_document(pdf_base64)
+			.then((pdf) => {
+				if (!previewState.attach(pdf)) return;
 				pdf_doc = pdf;
 				total_pages = pdf.numPages;
 				$pageInfo.text(`Page ${current_page} / ${total_pages}`);
 				$prevBtn.prop("disabled", current_page <= 1);
 				$nextBtn.prop("disabled", current_page >= total_pages);
 				render_page(current_page);
-			});
-		});
+			})
+			.catch(() => previewState.fail());
 
 		$prevBtn.on("click", () => {
 			if (current_page > 1) {
@@ -1097,12 +1292,12 @@
 			});
 		}
 
-		function render_page(pageNum) {
-			pdf_doc.getPage(pageNum).then((page) => {
+		function render_page_content(pageNum) {
+			return pdf_doc.getPage(pageNum).then(async (page) => {
 				const viewport = page.getViewport({ scale: SCALE_FACTOR });
 
 				// Scale to fit dialog width (max ~750px)
-				const maxWidth = 750;
+				const maxWidth = Math.min(750, Math.max(64, ($container.innerWidth() || 750) - 2));
 				const displayScale = Math.min(1, maxWidth / viewport.width);
 				const scaledViewport = page.getViewport({ scale: SCALE_FACTOR * displayScale });
 
@@ -1114,16 +1309,18 @@
 				$wrapper.css({ width: scaledViewport.width, height: scaledViewport.height });
 
 				const ctx = canvas.getContext("2d");
-				page.render({ canvasContext: ctx, viewport: scaledViewport }).promise.then(() => {
-					// Position signature box from saved coords
-					if (signature_coords.x || signature_coords.y) {
-						const displayX = signature_coords.x * displayScale;
-						const displayY = pdf_height - signature_coords.y * displayScale;
-						$sigBox.css({ left: displayX, top: displayY });
-					}
-					position_ghost_overlays(displayScale);
-					update_coords_display();
-				});
+				await page
+					.render({ canvasContext: ctx, viewport: scaledViewport })
+					.promise.then(() => {
+						// Position signature box from saved coords
+						if (signature_coords.x || signature_coords.y) {
+							const displayX = signature_coords.x * displayScale;
+							const displayY = pdf_height - signature_coords.y * displayScale;
+							$sigBox.css({ left: displayX, top: displayY });
+						}
+						position_ghost_overlays(displayScale);
+						update_coords_display();
+					});
 
 				$pageInfo.text(`Page ${pageNum} / ${total_pages}`);
 				$prevBtn.prop("disabled", pageNum <= 1);
@@ -1181,37 +1378,20 @@
 
 		function update_coords_display() {
 			$coordsDisplay.text(
-				`Coordinates: x=${signature_coords.x.toFixed(1)}, y=${signature_coords.y.toFixed(1)}, w=${signature_coords.width.toFixed(1)}, h=${signature_coords.height.toFixed(1)}`
+				`Coordinates: x=${signature_coords.x.toFixed(1)}, y=${signature_coords.y.toFixed(
+					1
+				)}, w=${signature_coords.width.toFixed(1)}, h=${signature_coords.height.toFixed(
+					1
+				)}`
 			);
 		}
 
 		dialog.onhide = () => {
+			previewState.dispose();
 			$(document).off("mousemove.sig_placement");
 			$(document).off("mouseup.sig_placement");
 		};
 
 		dialog.show();
-	}
-
-	// pdf.js Loader
-
-	let pdfjs_loaded = false;
-
-	function load_pdfjs() {
-		if (pdfjs_loaded && window.pdfjsLib) {
-			return Promise.resolve();
-		}
-		return new Promise((resolve, reject) => {
-			const script = document.createElement("script");
-			script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js";
-			script.onload = () => {
-				pdfjsLib.GlobalWorkerOptions.workerSrc =
-					"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
-				pdfjs_loaded = true;
-				resolve();
-			};
-			script.onerror = () => reject(new Error("Failed to load pdf.js"));
-			document.head.appendChild(script);
-		});
 	}
 })();

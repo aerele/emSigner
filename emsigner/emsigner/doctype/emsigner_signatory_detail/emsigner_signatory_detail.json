@@ -18,7 +18,11 @@
   "select_page",
   "page_number",
   "page_level_coordinates",
-  "place_sign"
+  "place_sign",
+  "signing_reference",
+  "callback_key",
+  "last_reminded",
+  "coordinates_reviewed"
  ],
  "fields": [
   {
@@ -60,7 +64,8 @@
    "fieldname": "reference_id",
    "fieldtype": "Data",
    "label": "Reference ID",
-   "read_only": 1
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "last_tried",
@@ -111,6 +116,36 @@
    "in_list_view": 1,
    "label": "Signature Status",
    "options": "Not Initiated\nPending Review\nReview In-Progress\nRejected\nFailure\nCompleted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signing_reference",
+   "fieldtype": "Data",
+   "label": "Signing Attempt Reference",
+   "read_only": 1,
+   "hidden": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "callback_key",
+   "fieldtype": "Password",
+   "label": "Callback Key",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_reminded",
+   "fieldtype": "Datetime",
+   "label": "Last Reminder",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "coordinates_reviewed",
+   "fieldtype": "Check",
+   "label": "Coordinate Format Reviewed",
+   "default": "0",
+   "hidden": 1,
    "read_only": 1
   }
  ],

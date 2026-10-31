@@ -11,6 +11,8 @@
   "column_break_xwjs",
   "public_certificate",
   "session_key",
+  "signing_secret",
+  "legacy_links_until",
   "gateway_url",
   "settings_tab",
   "document_type",
@@ -187,7 +189,7 @@
    "description": "AES encryption key provided by emSigner."
   },
   {
-   "default": "https://signergateway.emsigner.com/eMsecure/V3_0/Index",
+   "default": "https://demosignergateway.emsigner.com/eMsecure/V3_0/Index",
    "description": "eMudhra gateway URL. Use demo URL for testing: https://demosignergateway.emsigner.com/eMsecure/V3_0/Index",
    "fieldname": "gateway_url",
    "fieldtype": "Data",
@@ -204,6 +206,19 @@
    "fieldtype": "Table",
    "label": "Print Format",
    "options": "emSigner Print Format"
+  },
+  {
+   "fieldname": "signing_secret",
+   "fieldtype": "Password",
+   "label": "Signing Link Secret",
+   "hidden": 1
+  },
+  {
+   "fieldname": "legacy_links_until",
+   "fieldtype": "Datetime",
+   "label": "Legacy Link Cutoff",
+   "hidden": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

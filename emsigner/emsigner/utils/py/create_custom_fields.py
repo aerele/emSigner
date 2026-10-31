@@ -15,6 +15,7 @@ def make_custom_fields(doctype, module=None):
 				insert_after=last_fieldname,
 				print_hide=1,
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -30,6 +31,7 @@ def make_custom_fields(doctype, module=None):
 				fieldtype="Attach",
 				insert_after="emsigner_sb_1",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -45,6 +47,7 @@ def make_custom_fields(doctype, module=None):
 				options="Print Format",
 				insert_after="emsigner_cb",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -54,6 +57,7 @@ def make_custom_fields(doctype, module=None):
 				options="Letter Head",
 				insert_after="requested_print_format",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -70,6 +74,7 @@ def make_custom_fields(doctype, module=None):
 				insert_after="emsigner_sb_2",
 				options="emSigner Signatory Detail",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 		]

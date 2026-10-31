@@ -19,7 +19,10 @@ frappe.pages["emudhra_signing_redirect"].on_page_load = function (wrapper) {
 			if (response && response.message) {
 				show_redirect_ui(wrapper, response.message);
 			} else {
-				show_error(wrapper, __("Signing data not found or has expired. Please try again."));
+				show_error(
+					wrapper,
+					__("Signing data not found or has expired. Please try again.")
+				);
 			}
 		},
 		error: function () {
@@ -29,18 +32,36 @@ frappe.pages["emudhra_signing_redirect"].on_page_load = function (wrapper) {
 };
 
 function show_redirect_ui(wrapper, signingData) {
-	const gateway_url = signingData.gateway_url
-		|| "https://signergateway.emsigner.com/eMsecure/V3_0/Index";
+	const gateway_url =
+		signingData.gateway_url || "https://demosignergateway.emsigner.com/eMsecure/V3_0/Index";
 
 	// Validate gateway URL points to a trusted emsigner domain
 	try {
 		const parsed = new URL(gateway_url);
-		if (!parsed.hostname.endsWith(".emsigner.com")) {
-			show_error(wrapper, __("Invalid gateway URL configured. Please contact your administrator."));
+		if (
+			parsed.protocol !== "https:" ||
+			![
+				"signergateway.emsigner.com",
+				"demosignergateway.emsigner.com",
+				"testgateway.emsigner.com",
+			].includes(parsed.hostname) ||
+			parsed.username ||
+			parsed.password ||
+			parsed.pathname !== "/eMsecure/V3_0/Index" ||
+			parsed.search ||
+			parsed.hash
+		) {
+			show_error(
+				wrapper,
+				__("Invalid gateway URL configured. Please contact your administrator.")
+			);
 			return;
 		}
 	} catch (e) {
-		show_error(wrapper, __("Invalid gateway URL configured. Please contact your administrator."));
+		show_error(
+			wrapper,
+			__("Invalid gateway URL configured. Please contact your administrator.")
+		);
 		return;
 	}
 

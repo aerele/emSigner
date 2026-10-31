@@ -28,6 +28,7 @@ app_license = "mit"
 # app_include_css = "/assets/emsigner/css/emsigner.css"
 
 app_include_js = "emsigner.bundle.js"
+app_include_css = "emsigner.bundle.css"
 
 extend_bootinfo = "emsigner.emsigner.api.boot.get_emsigner_boot_info"
 
@@ -247,3 +248,7 @@ extend_bootinfo = "emsigner.emsigner.api.boot.get_emsigner_boot_info"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+scheduler_events = {"cron": {"*/5 * * * *": ["emsigner.emsigner.api.signing_state.cleanup_expired_sessions"]}}
+
+doc_events = {"*": {"on_trash": "emsigner.emsigner.api.signing_state.clear_document_keys"}}

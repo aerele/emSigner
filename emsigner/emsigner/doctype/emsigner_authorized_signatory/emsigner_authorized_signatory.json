@@ -14,7 +14,8 @@
   "select_page",
   "page_number",
   "sign_position",
-  "customize_coordinates"
+  "customize_coordinates",
+  "coordinates_reviewed"
  ],
  "fields": [
   {
@@ -85,6 +86,14 @@
    "fieldname": "customize_coordinates",
    "fieldtype": "Data",
    "label": "Customize Coordinates",
+   "read_only": 1
+  },
+  {
+   "fieldname": "coordinates_reviewed",
+   "fieldtype": "Check",
+   "label": "Coordinate Format Reviewed",
+   "default": "0",
+   "hidden": 1,
    "read_only": 1
   }
  ],
