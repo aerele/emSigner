@@ -599,7 +599,7 @@ function show_reposition_preview(frm, sigs, pdf_base64, config) {
 		render_page(current_page);
 	});
 
-	$container.on("input", ".sig-page-number", function () {
+	$container.on("input change", ".sig-page-number", function () {
 		const idx = parseInt($(this).data("index"));
 		const val = $(this).val();
 		sig_updates[idx].page_number = val;

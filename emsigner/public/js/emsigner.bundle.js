@@ -639,7 +639,7 @@ frappe.emsigner.persistSignatureUpdates = persistSignatureUpdates;
 		});
 
 		// Page number input changed
-		$container.on("input", ".sig-page-number", function () {
+		$container.on("input change", ".sig-page-number", function () {
 			const idx = parseInt($(this).data("index"));
 			const val = $(this).val();
 			sig_updates[idx].page_number = val;
