@@ -13,8 +13,6 @@ from emsigner.emsigner.utils.py.create_custom_fields import make_custom_fields
 
 def execute():
 	settings = "emSigner Settings"
-	if not frappe.db.get_single_value(settings, "name"):
-		frappe.db.set_single_value(settings, "name", settings)
 	# A newly added Single field has no stored value on an existing site.
 	if not frappe.db.get_single_value(settings, "gateway_url"):
 		frappe.db.set_single_value(settings, "gateway_url", DEMO_GATEWAY)

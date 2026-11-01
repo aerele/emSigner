@@ -2,6 +2,7 @@
 
 import base64
 import contextvars
+import inspect
 import io
 import json
 import os
@@ -79,6 +80,18 @@ def pdf_bytes():
 	out = io.BytesIO()
 	writer.write(out)
 	return out.getvalue() + b"\n% test " + uuid.uuid4().hex.encode()
+
+
+def sync_database_for_request():
+	"""Use the Frappe request cleanup signature available in the test runtime."""
+
+	from frappe.app import sync_database
+
+	rollback = inspect.signature(sync_database).parameters.get("rollback")
+	if rollback and rollback.default is inspect.Parameter.empty:
+		sync_database(rollback=False)
+	else:
+		sync_database()
 
 
 class TestSigningFlow(unittest.TestCase):
@@ -209,9 +222,7 @@ class TestSigningFlow(unittest.TestCase):
 					result = operation()
 				else:
 					result = make_sign.make_sign() if method == "GET" else emsigner_decrypt.decrypt_method()
-				from frappe.app import sync_database
-
-				sync_database()
+				sync_database_for_request()
 				return result
 			finally:
 				frappe.db.rollback()
@@ -350,22 +361,78 @@ class TestSigningFlow(unittest.TestCase):
 			make_sign.fetch_emsigner_authorized_signatory(TEST_DT, self.doc.name)
 		self.assertEqual([row.name for row in self.read_doc().signatory_detail], before)
 
-	def test_migration_keeps_demo_secret_and_fixed_legacy_cutoff(self):
-		frappe.db.set_single_value("emSigner Settings", "gateway_url", "")
+	def test_request_sync_database_supports_v15_and_v16_signatures(self):
+		v15_calls = []
+
+		def v15_sync_database(rollback):
+			v15_calls.append(rollback)
+
+		with patch("frappe.app.sync_database", v15_sync_database):
+			self.request("POST", operation=lambda: Response("synthetic"))
+		self.assertEqual(v15_calls, [False])
+
+		v16_calls = []
+
+		def v16_sync_database():
+			v16_calls.append(True)
+
+		with patch("frappe.app.sync_database", v16_sync_database):
+			self.request("POST", operation=lambda: Response("synthetic"))
+		self.assertEqual(v16_calls, [True])
+
+	def test_migration_is_idempotent_without_mutating_existing_settings_or_rows(self):
+		settings = "emSigner Settings"
+		frappe.db.set_single_value(settings, "gateway_url", "")
+		frappe.db.set_single_value(settings, "legacy_links_until", "")
+		frappe.db.delete("__Auth", {"doctype": settings, "name": settings, "fieldname": "signing_secret"})
+		frappe.db.commit()
+
+		def protected_state():
+			return {
+				"credentials": {
+					"session_key": get_decrypted_password(settings, settings, fieldname="session_key"),
+					"authentication_token": get_decrypted_password(
+						settings, settings, fieldname="authentication_token"
+					),
+					"public_certificate": frappe.db.get_single_value(settings, "public_certificate"),
+				},
+				"rows": [
+					(row.name, row.reference_id, row.signing_reference, row.signature_status, row.last_tried)
+					for row in self.read_doc().signatory_detail
+				],
+			}
+
+		before = protected_state()
+
+		with (
+			patch.object(preserve_signing_settings, "make_custom_fields"),
+			patch.object(frappe.db, "get_single_value", wraps=frappe.db.get_single_value) as get_single_value,
+			patch.object(frappe.db, "set_single_value", wraps=frappe.db.set_single_value) as set_single_value,
+		):
+			preserve_signing_settings.execute()
+		frappe.db.commit()
+		for calls in (get_single_value.call_args_list, set_single_value.call_args_list):
+			self.assertFalse(any(call.args[:2] == (settings, "name") for call in calls))
+		secret = get_decrypted_password(settings, settings, fieldname="signing_secret")
+		cutoff = frappe.db.get_single_value(settings, "legacy_links_until")
+		self.assertEqual(frappe.db.get_single_value(settings, "gateway_url"), emsigner.DEMO_GATEWAY)
+		self.assertTrue(secret)
+		self.assertTrue(cutoff)
+		self.assertEqual(protected_state(), before)
+
+		explicit_gateway = "https://gateway.example.invalid/sign"
+		frappe.db.set_single_value(settings, "gateway_url", explicit_gateway)
+		frappe.db.commit()
 		with patch.object(preserve_signing_settings, "make_custom_fields"):
 			preserve_signing_settings.execute()
-		secret = get_decrypted_password("emSigner Settings", "emSigner Settings", fieldname="signing_secret")
-		until = frappe.db.get_single_value("emSigner Settings", "legacy_links_until")
+		frappe.db.commit()
+		self.assertEqual(frappe.db.get_single_value(settings, "gateway_url"), explicit_gateway)
 		self.assertEqual(
-			frappe.db.get_single_value("emSigner Settings", "gateway_url"), emsigner.DEMO_GATEWAY
-		)
-		with patch.object(preserve_signing_settings, "make_custom_fields"):
-			preserve_signing_settings.execute()
-		self.assertEqual(
-			get_decrypted_password("emSigner Settings", "emSigner Settings", fieldname="signing_secret"),
+			get_decrypted_password(settings, settings, fieldname="signing_secret"),
 			secret,
 		)
-		self.assertEqual(frappe.db.get_single_value("emSigner Settings", "legacy_links_until"), until)
+		self.assertEqual(frappe.db.get_single_value(settings, "legacy_links_until"), cutoff)
+		self.assertEqual(protected_state(), before)
 
 	def test_parallel_callbacks_create_one_file(self):
 		self.assertEqual(self.start().status_code, 200)
