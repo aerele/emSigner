@@ -1,0 +1,69 @@
+name: signing tests
+on:
+  pull_request:
+  push:
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - frappe: version-15
+            python: '3.11'
+          - frappe: v16.53.0
+            python: '3.14'
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+      redis-cache:
+        image: redis:7-alpine
+        ports:
+          - 13000:6379
+      redis-queue:
+        image: redis:7-alpine
+        ports:
+          - 11000:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install bench tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libmariadb-dev libldap2-dev libsasl2-dev
+          python -m pip install frappe-bench
+          npm install -g yarn
+      - name: Prepare disposable bench
+        working-directory: ${{ runner.temp }}
+        run: |
+          bench init --skip-assets --skip-redis-config-generation --frappe-branch '${{ matrix.frappe }}' --python python emsigner-bench
+          cd emsigner-bench
+          bench set-config -g redis_cache redis://127.0.0.1:13000
+          bench set-config -g redis_queue redis://127.0.0.1:11000
+          bench get-app --skip-assets emsigner "$GITHUB_WORKSPACE"
+          bench new-site test_emsigner --db-host 127.0.0.1 --db-root-password root --admin-password admin --mariadb-user-host-login-scope '%'
+          bench --site test_emsigner install-app emsigner
+          bench --site test_emsigner set-config allow_tests 1
+      - name: Check native transactions under REPEATABLE READ
+        working-directory: ${{ runner.temp }}/emsigner-bench
+        env:
+          EMSIGNER_TEST_ISOLATION: REPEATABLE READ
+        run: env/bin/python apps/emsigner/scripts/run_tests.py test_emsigner
+      - name: Check placement saves and recovery
+        run: node --test emsigner/tests/test_signature_updates.mjs
+      - name: Build the app assets
+        working-directory: ${{ runner.temp }}/emsigner-bench
+        run: bench build --app emsigner

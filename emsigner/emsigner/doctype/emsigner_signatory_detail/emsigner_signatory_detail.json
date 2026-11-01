@@ -17,7 +17,12 @@
   "customize_coordinates",
   "select_page",
   "page_number",
-  "page_level_coordinates"
+  "page_level_coordinates",
+  "place_sign",
+  "signing_reference",
+  "callback_key",
+  "last_reminded",
+  "coordinates_reviewed"
  ],
  "fields": [
   {
@@ -59,7 +64,8 @@
    "fieldname": "reference_id",
    "fieldtype": "Data",
    "label": "Reference ID",
-   "read_only": 1
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "last_tried",
@@ -79,22 +85,29 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval: doc.select_page == 'SPECIFY'",
    "fieldname": "page_number",
    "fieldtype": "Data",
    "label": "Page Number",
-   "read_only": 1
+   "mandatory_depends_on": "eval: doc.select_page == 'SPECIFY'"
   },
   {
+   "depends_on": "eval: doc.select_page == 'PAGE LEVEL'",
    "fieldname": "page_level_coordinates",
    "fieldtype": "Data",
-   "label": "Page Level Coordinates",
-   "read_only": 1
+   "label": "Page Level Coordinates"
   },
   {
    "fieldname": "customize_coordinates",
    "fieldtype": "Data",
    "label": "Customize Coordinates",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.sign_position == 'Customize'",
+   "fieldname": "place_sign",
+   "fieldtype": "Button",
+   "label": "Place Sign"
   },
   {
    "columns": 2,
@@ -104,12 +117,42 @@
    "label": "Signature Status",
    "options": "Not Initiated\nPending Review\nReview In-Progress\nRejected\nFailure\nCompleted",
    "read_only": 1
+  },
+  {
+   "fieldname": "signing_reference",
+   "fieldtype": "Data",
+   "label": "Signing Attempt Reference",
+   "read_only": 1,
+   "hidden": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "callback_key",
+   "fieldtype": "Password",
+   "label": "Callback Key",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_reminded",
+   "fieldtype": "Datetime",
+   "label": "Last Reminder",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "coordinates_reviewed",
+   "fieldtype": "Check",
+   "label": "Coordinate Format Reviewed",
+   "default": "0",
+   "hidden": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-14 11:49:18.244742",
+ "modified": "2026-03-16 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Signatory Detail",

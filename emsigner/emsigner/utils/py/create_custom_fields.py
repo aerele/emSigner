@@ -1,21 +1,21 @@
 import frappe
-from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
 def make_custom_fields(doctype, module=None):
-	# doctype_list = frappe.get_all("emSigner Doctype", {"parent": "emSigner Settings"}, pluck="doctype_name")
-	# module="emSigner"
-	# for doctype in doctype_list:
+	meta = frappe.get_meta(doctype)
+	last_fieldname = meta.fields[-1].fieldname if meta.fields else None
+
 	custom_fields = {
 		doctype: [
 			dict(
 				fieldname="emsigner_tb",
 				label="emSigner Details",
 				fieldtype="Tab Break",
-				insert_after=frappe.get_meta(doctype).fields[-1].fieldname,
+				insert_after=last_fieldname,
 				print_hide=1,
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -31,6 +31,7 @@ def make_custom_fields(doctype, module=None):
 				fieldtype="Attach",
 				insert_after="emsigner_sb_1",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -46,6 +47,7 @@ def make_custom_fields(doctype, module=None):
 				options="Print Format",
 				insert_after="emsigner_cb",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -55,6 +57,7 @@ def make_custom_fields(doctype, module=None):
 				options="Letter Head",
 				insert_after="requested_print_format",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 			dict(
@@ -71,6 +74,7 @@ def make_custom_fields(doctype, module=None):
 				insert_after="emsigner_sb_2",
 				options="emSigner Signatory Detail",
 				read_only=1,
+				allow_on_submit=1,
 				module=module,
 			),
 		]

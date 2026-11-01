@@ -1,73 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cancelled</title>
-    <style>
-        /* Hide Frappe Header, Footer, and Sidebars */
-        .navbar, .footer, #page-desktop, #page-header {
-            display: none !important;
-        }
-        /* Body Styling */
-        body {
-            background-color: #f4f6f8;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        /* Cancelled Page Container */
-        .container {
-            background: white;
-            padding: 40px 50px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 400px;
-        }
-        .warning {
-            font-size: 100px;
-            color: #FFA000;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        p {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 25px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #FFA000;
-            border: none;
-            border-radius: 50px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .btn:hover {
-            background-color: #FF8F00;
-        }
-    </style>
-</head>
-<body>
+{% extends "templates/web.html" %}
 
-    <div class="container">
-        <div class="warning">&#9888;</div>
-        <h1>Cancelled</h1>
-        <p>The signing process has been cancelled by the user.</p>
-    </div>
-
-</body>
-</html>
+{% block page_content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; padding: 40px 20px; text-align: center;">
+	<div style="width: 80px; height: 80px; border-radius: 50%; background: #fff3e0; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+		<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F57C00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+			<circle cx="12" cy="12" r="10"/>
+			<line x1="12" y1="8" x2="12" y2="12"/>
+			<line x1="12" y1="16" x2="12.01" y2="16"/>
+		</svg>
+	</div>
+	<h2 style="margin: 0 0 8px 0; color: #333; font-weight: 600;">Signing Cancelled</h2>
+	<p style="margin: 0 0 32px 0; color: #666; font-size: 15px; max-width: 400px;">
+		The signing process was cancelled. You can try again from the document.
+	</p>
+	{% if doctype and docname %}
+	<a href="/app/{{ doctype | e | replace(' ', '-') | lower }}/{{ docname | e }}"
+		class="btn btn-default btn-md" style="border-radius: 6px; padding: 10px 28px; font-size: 14px;">
+		Go to Document
+	</a>
+	{% endif %}
+</div>
+{% endblock %}

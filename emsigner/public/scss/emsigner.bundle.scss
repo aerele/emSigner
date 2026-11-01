@@ -1,0 +1,43 @@
+.pre-sign-container,
+.reposition-container {
+	min-width: 0;
+
+	.sig-cards-list {
+		max-height: 60vh;
+		overflow-y: auto;
+	}
+
+	.warnings-banner {
+		background: var(--subtle-fg) !important;
+		color: var(--text-color);
+		border-color: var(--yellow-500) !important;
+	}
+
+	.sig-card {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.pdf-section {
+		min-width: 0;
+		max-width: 100%;
+	}
+}
+
+@media (max-width: 767px) {
+	.pre-sign-container,
+	.reposition-container {
+		flex-direction: column;
+
+		> .sig-sidebar,
+		> .pdf-section {
+			width: 100% !important;
+		}
+
+		.sig-cards-list {
+			display: grid !important;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			max-height: 35vh;
+		}
+	}
+}

@@ -8,7 +8,12 @@
  "field_order": [
   "permitted_doctype",
   "print_format",
-  "letter_head"
+  "letter_head",
+  "sample_document",
+  "column_break_sig",
+  "default_sign_position",
+  "default_select_page",
+  "default_customize_coordinates"
  ],
  "fields": [
   {
@@ -16,27 +21,66 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Print Format",
-   "options": "Print Format"
+   "options": "Print Format",
+   "read_only": 1
   },
   {
    "fieldname": "letter_head",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Letter Head",
-   "options": "Letter Head"
+   "options": "Letter Head",
+   "read_only": 1
   },
   {
    "fieldname": "permitted_doctype",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Permitted Doctype",
-   "options": "DocType"
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sample_document",
+   "fieldtype": "Dynamic Link",
+   "label": "Sample Document",
+   "options": "permitted_doctype",
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Reference document used for signature placement preview"
+  },
+  {
+   "fieldname": "column_break_sig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_sign_position",
+   "fieldtype": "Select",
+   "label": "Default Sign Position",
+   "options": "\nTop-Left\nTop-Center\nTop-Right\nMiddle-Left\nMiddle-Center\nMiddle-Right\nBottom-Left\nBottom-Center\nBottom-Right\nCustomize",
+   "read_only": 1,
+   "description": "Default signature position for this print format"
+  },
+  {
+   "fieldname": "default_select_page",
+   "fieldtype": "Select",
+   "label": "Default Select Page",
+   "options": "\nALL\nFIRST\nEVEN\nLAST\nODD\nSPECIFY\nPAGE LEVEL",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.default_sign_position == 'Customize'",
+   "fieldname": "default_customize_coordinates",
+   "fieldtype": "Data",
+   "label": "Default Coordinates",
+   "read_only": 1,
+   "description": "Default coordinates for signature placement (x,y,width,height)"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-13 12:01:53.824161",
+ "modified": "2026-03-16 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "emSigner",
  "name": "emSigner Print Format",

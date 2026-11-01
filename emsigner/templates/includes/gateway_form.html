@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>{{ _("Continue to emSigner") | e }}</title>
+<style>:root{color-scheme:light dark}body{font:1rem/1.6 system-ui;padding:2rem;margin:0;overflow-wrap:anywhere}main{max-width:38rem;margin:10vh auto}h1{font-size:1.6rem}button{font:inherit;padding:.65rem 1rem;cursor:pointer}</style></head>
+<body><main><h1>{{ _("Continue to emSigner") | e }}</h1>
+<p>{{ _("The document is ready for signing. Continue if this page does not open the signing service.") | e }}</p>
+<form id="signing-form" method="post" action="{{ data.gateway_url | e }}">
+<input type="hidden" name="Parameter1" value="{{ data.encrypted_session_key | e }}">
+<input type="hidden" name="Parameter2" value="{{ data.encrypted_data | e }}">
+<input type="hidden" name="Parameter3" value="{{ data.encrypted_hash | e }}">
+<button type="submit">{{ _("Continue to signing") | e }}</button></form></main>
+<script nonce="{{ nonce | e }}">document.getElementById("signing-form").submit();</script>
+</body></html>
